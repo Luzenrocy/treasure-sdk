@@ -16,7 +16,7 @@ import type { TreasureResponse } from './types';
  *
  * @example
  * ```typescript
- * import { setting } from '@treasure/sdk';
+ * import { setting } from 'treasure-sdk';
  *
  * // 读取单个配置
  * const res = await setting.getByKey('storage_dir');

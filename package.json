@@ -1,6 +1,6 @@
 {
-  "name": "@treasure/sdk",
-  "version": "1.0.0",
+  "name": "treasure-sdk",
+  "version": "1.0.2",
   "type": "module",
   "description": "Treasure 插件 SDK — 插件与宿主通信的统一接口",
   "main": "./dist/index.cjs",
@@ -17,10 +17,10 @@
     },
     "./ruhua-simeng.css": "./dist/assets/ruhua-simeng.css"
   },
-  "files": ["dist"],
-  "publishConfig": {
-    "access": "public"
-  },
+  "files": [
+    "dist",
+    "template"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -32,6 +32,7 @@
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
+    "@types/handlebars": "^4.0.40",
     "@types/node": "^20.0.0",
     "tsup": "^8.0.0",
     "typescript": "~5.6.0"

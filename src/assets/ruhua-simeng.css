@@ -1,8 +1,8 @@
 /**
- * @treasure/sdk — Ruhua Simeng Xingkai 字体
+ * treasure-sdk — Ruhua Simeng Xingkai 字体
  *
  * 使用方式（宿主 common.css 或插件 App.vue <style> 块）：
- *   @import url('@treasure/sdk/ruhua-simeng.css');
+ *   @import url('treasure-sdk/ruhua-simeng.css');
  *
  * 该字体文件（ruhua-simeng-xingkai.ttf, ~5MB）随 SDK 打包分发，
  * 宿主和插件无需重复拷贝字体文件。

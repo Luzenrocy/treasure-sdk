@@ -42,7 +42,7 @@ function isProduction(): boolean {
  * @example
  * ```typescript
  * // main.ts
- * import { initTreasure } from '@treasure/sdk';
+ * import { initTreasure } from 'treasure-sdk';
  * initTreasure();
  * app.mount('#app');
  * ```
@@ -65,7 +65,7 @@ export function initTreasure(): TreasureBridge {
  *
  * @example
  * ```typescript
- * import { getTreasure } from '@treasure/sdk';
+ * import { getTreasure } from 'treasure-sdk';
  * const bridge = getTreasure();
  * const res = await bridge.query('SELECT 1', []);
  * ```

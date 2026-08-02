@@ -12,7 +12,7 @@
     "build:plugin:zip": "node scripts/clean-build-output.mjs && npm run build && node scripts/build-plugin.mjs --zip"
   },
   "dependencies": {
-    "@treasure/sdk": "^1.0.0",
+    "treasure-sdk": "^1.0.2",
     "vue": "^3.5.13",
     "element-plus": "^2.11.9"
   },

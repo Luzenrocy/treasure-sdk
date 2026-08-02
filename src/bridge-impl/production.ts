@@ -5,7 +5,7 @@
  * 通过 window.parent.postMessage 向宿主发送请求，
  * 宿主 pluginBridge.ts 监听 'treasure-db-request' 消息并处理。
  *
- * 通信协议详见 SDK-HOST.md 第二章。
+ * 通信协议详见 docs/BRIDGE-PROTOCOL.md。
  *
  * @packageDocumentation
  */

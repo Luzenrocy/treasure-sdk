@@ -269,7 +269,7 @@ export class Response {
  * 从 DOM 中读取插件编码
  *
  * 插件编码在 index.html 的 <meta name="treasure-plugin-code"> 中声明，
- * 详见 SDK-PLUGIN.md 1.3 节。
+ * 插件入口与编码约定见 Treasure 插件研发指南。
  */
 export function getPluginCode(): string {
   const meta = document.querySelector('meta[name="treasure-plugin-code"]');

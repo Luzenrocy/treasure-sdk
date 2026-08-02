@@ -18,7 +18,7 @@ import type { TreasureResponse, FileEntry, CreateDirOptions, DeleteDirOptions } 
  *
  * @example
  * ```typescript
- * import { file } from '@treasure/sdk';
+ * import { file } from 'treasure-sdk';
  *
  * const res = await file.readFile('/path/to/notes.md');
  * if (res.code === 1) {
