@@ -19,11 +19,15 @@
   },
   "files": [
     "dist",
-    "template"
+    "template",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "pack:check": "npm pack --dry-run",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
