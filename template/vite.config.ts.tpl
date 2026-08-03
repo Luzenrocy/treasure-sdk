@@ -14,11 +14,7 @@ function generateRandomSuffix(length = 6) {
 }
 
 function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .replace(/[\u4e00-\u9fa5]/g, '');
+  return text.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-|-$/g, '').replace(/[\u4e00-\u9fa5]/g, '');
 }
 
 function syncHtmlPluginCode(htmlPath: string, code: string) {
@@ -45,12 +41,10 @@ function treasureDevEndpoints(): any {
         const raw = readFileSync(manifestPath, 'utf-8');
         const manifest = JSON.parse(raw);
         if (!manifest._frozen) {
-          let slug = '';
-          if (manifest.alias) slug = slugify(manifest.alias);
+          let slug = manifest.alias ? slugify(manifest.alias) : '';
           if (!slug) slug = slugify(basename(root));
           if (!slug) slug = 'plugin';
-          const suffix = generateRandomSuffix(6);
-          const frozenName = `${slug}-${suffix}`;
+          const frozenName = `${slug}-${generateRandomSuffix(6)}`;
           manifest.name = frozenName;
           manifest._frozen = true;
           writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));

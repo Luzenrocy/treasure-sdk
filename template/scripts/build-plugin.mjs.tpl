@@ -28,44 +28,24 @@ function generateRandomSuffix(length = 6) {
   const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
   const bytes = randomBytes(length);
   let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars[bytes[i] % 36];
-  }
+  for (let i = 0; i < length; i++) result += chars[bytes[i] % 36];
   return result;
 }
 
 function slugify(text) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .replace(/[\u4e00-\u9fa5]/g, '');
+  return text.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-|-$/g, '').replace(/[\u4e00-\u9fa5]/g, '');
 }
 
 function freezePluginCode(manifestPath, root) {
-  const raw = readFileSync(manifestPath, 'utf-8');
-  const manifest = JSON.parse(raw);
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
   if (manifest._frozen) return manifest;
-
-  let slug = '';
-  if (manifest.alias) {
-    slug = slugify(manifest.alias);
-  }
-  if (!slug) {
-    slug = slugify(basename(root));
-  }
-  if (!slug) {
-    slug = 'plugin';
-  }
-
-  const suffix = generateRandomSuffix(6);
-  const frozenName = `${slug}-${suffix}`;
-
-  manifest.name = frozenName;
+  let slug = manifest.alias ? slugify(manifest.alias) : '';
+  if (!slug) slug = slugify(basename(root));
+  if (!slug) slug = 'plugin';
+  manifest.name = `${slug}-${generateRandomSuffix(6)}`;
   manifest._frozen = true;
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-  console.log(`❄️  plugin_code 已冻结并写回源文件: ${frozenName}`);
-
+  console.log(`❄️  plugin_code 已冻结并写回源文件: ${manifest.name}`);
   return manifest;
 }
 
@@ -95,6 +75,7 @@ if (!existsSync(manifestPath)) {
 
 const frozenManifest = freezePluginCode(manifestPath, root);
 const pluginName = frozenManifest.name;
+const packageName = basename(root);
 
 syncPluginCodeInHtml(root, pluginName);
 
@@ -107,10 +88,14 @@ if (!/^[a-z][a-z0-9-]*$/.test(pluginName)) {
   console.error('❌ manifest.name 必须为 kebab-case');
   process.exit(1);
 }
+if (!/^[a-z][a-z0-9-]*$/.test(packageName)) {
+  console.error('❌ 插件项目目录名必须为 kebab-case，才能作为插件包名');
+  process.exit(1);
+}
 
 const buildOutputDir = join(root, 'build-output');
 mkdirSync(buildOutputDir, { recursive: true });
-const outputDir = join(buildOutputDir, `${pluginName}.treasure-plugin`);
+const outputDir = join(buildOutputDir, packageName);
 mkdirSync(outputDir, { recursive: true });
 
 const distDir = join(root, 'dist');
@@ -122,13 +107,14 @@ cpSync(distDir, outputDir, { recursive: true });
 
 const outputIndexPath = join(outputDir, 'index.html');
 const outputIndexHtml = readFileSync(outputIndexPath, 'utf-8');
-const updatedHtml = outputIndexHtml.replace(
-  /<meta\s+name=["']treasure-plugin-code["']\s+content=["'][^"']*["']/,
-  `<meta name="treasure-plugin-code" content="${pluginName}"`
-);
-if (outputIndexHtml === updatedHtml) {
+const pluginCodeMetaPattern = /<meta\s+name=["']treasure-plugin-code["']\s+content=["'][^"']*["']/;
+if (!pluginCodeMetaPattern.test(outputIndexHtml)) {
   console.warn('⚠️  未在 index.html 中找到 treasure-plugin-code meta，跳过覆写');
 } else {
+  const updatedHtml = outputIndexHtml.replace(
+    pluginCodeMetaPattern,
+    `<meta name="treasure-plugin-code" content="${pluginName}"`
+  );
   writeFileSync(outputIndexPath, updatedHtml);
   console.log(`✅ 产物 index.html 的 treasure-plugin-code 已同步为: ${pluginName}`);
 }
@@ -154,8 +140,8 @@ console.log(`✅ Plugin package created: ${outputDir}`);
 
 if (shouldZip) {
   try {
-    const zipPath = `${outputDir}.zip`;
-    execSync(`zip -r "${zipPath}" "${pluginName}.treasure-plugin"`, {
+    const zipPath = join(buildOutputDir, `${packageName}.zip`);
+    execSync(`zip -r "${zipPath}" "${packageName}"`, {
       cwd: join(root, 'build-output'),
       stdio: 'pipe',
     });
