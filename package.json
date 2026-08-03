@@ -3,11 +3,15 @@
   "version": "1.0.5",
   "type": "module",
   "description": "Treasure 插件 SDK — 插件与宿主通信的统一接口",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Luzenrocy/treasure-sdk.git"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "treasure-sdk": "./dist/cli/index.js"
+    "treasure-sdk": "dist/cli/index.js"
   },
   "exports": {
     ".": {
