@@ -2,7 +2,7 @@
 import { program } from 'commander';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
 import picocolors from 'picocolors';
 import { generateUid } from './utils/helpers';
@@ -10,11 +10,13 @@ import { promptIfMissing } from './utils/prompts';
 import { renderTemplate } from './utils/generator';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = path.join(__dirname, '../../package.json');
+const sdkVersion = (JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version: string }).version;
 
 program
   .name('treasure-sdk')
   .description('Treasure 插件 SDK CLI')
-  .version('1.0.0');
+  .version(sdkVersion);
 
 program
   .command('create <pluginName>')
@@ -50,6 +52,7 @@ program
       PLUGIN_AUTHOR: answers.author,
       PLUGIN_UID: uid,
       YEAR: new Date().getFullYear().toString(),
+      SDK_VERSION: sdkVersion,
     });
 
     if (options.install !== false) {
