@@ -1,106 +1,47 @@
-# Treasure 桥接协议
+# Treasure SDK 2.0 桥接协议
 
-> 本文定义 Treasure 宿主与 `treasure-sdk` 之间的**底层通信契约**。它不介绍插件如何实现功能，也不逐一解释 SDK 方法；插件开发请参阅[插件研发指南](https://github.com/Luzenrocy/treasure-plugins/blob/main/docs/PLUGIN-DEVELOPMENT-GUIDE.md)，方法签名请参阅 [SDK API 参考](API-REFERENCE.md)。
+此协议是 SDK 与 Treasure 2.0.0+ 桌面应用之间的内部契约。本文中的“宿主”指负责加载插件 iframe、校验请求并执行系统能力的 Treasure 桌面应用。插件作者只调用 SDK 的类型化模块，不直接发送 operation 字符串。
 
-## 1. 范围与术语
+## 消息信封与传输
 
-| 名称 | 含义 |
-| --- | --- |
-| 宿主 | Treasure 桌面应用，负责加载插件、裁决权限与执行原生能力。 |
-| SDK | `treasure-sdk` 包，对插件暴露稳定的类型化接口。 |
-| 插件 | 由宿主以 iframe 加载的独立 Web 应用。 |
-| 桥接协议 | SDK 生产态与宿主之间传递请求、响应和事件的消息约定。 |
+请求：`{ type: 'treasure-db-request', requestId, operation, payload }`。响应：`{ type: 'treasure-db-response', requestId, result }`，其中 `result` 是 `Result<T>`。
 
-插件业务代码必须调用 SDK API，不能自行拼装桥接消息。宿主实现需要遵守本协议，SDK 负责将协议细节封装为 Promise API。
+`ProductionBridge` 为每次调用生成 `requestId`，并通过 `window.parent.postMessage(..., '*')` 把请求发送给父窗口。宿主以 `MessageEvent.source` 定位已注册 iframe，再校验该 iframe 的登记 origin；校验通过后，响应使用请求 origin 作为目标。SDK 以消息类型和 `requestId` 关联 Promise。普通 operation 默认 10 秒超时；`files.openDialog` 与 `files.saveDialog` 等待用户关闭系统窗口，不设置 SDK 超时。
 
-## 2. 请求与响应信封
+宿主从 iframe 的 `MessageEvent.source` 与已注册 iframe 元数据解析插件身份；请求体中的任何 `pluginCode` 都不具有效力。
 
-生产态使用 `window.postMessage` 传输；消息名称为历史兼容名称，并不代表能力只限于数据库。
+## 能力注册表
 
-```ts
-interface BridgeRequest {
-  type: 'treasure-db-request';
-  requestId: string;
-  pluginCode: string;
-  action: string;
-  // action 对应的 JSON 可序列化载荷
-}
+| capability | operation | 最低版本 |
+| --- | --- | --- |
+| files | `files.openDialog/saveDialog/readFile/writeFile` | 2.0.0 |
+| directories | `directories.list/create/remove` | 2.0.0 |
+| storage | `storage.read/write/remove` | 2.0.0 |
+| database | `database.query/execute/transaction` | 2.0.0 |
+| settings | `settings.get/set/list` | 2.0.0 |
+| permissions | `permissions.grantDirectory/getDirectory/revokeDirectory` | 2.0.0 |
+| menus | `menus.register/unregister` | 2.0.0 |
+| notifications | `notifications.send` | 2.0.0 |
+| logs | `logs.write` | 2.0.0 |
 
-interface BridgeResponse<T = unknown> {
-  type: 'treasure-db-response';
-  requestId: string;
-  code: 1 | 0 | -1 | -2 | -3;
-  msg?: string;
-  data?: T;
-}
-```
+宿主先验证 operation 对应的请求 schema，再以解析到的身份进行文件授权、存储、设置、菜单和数据库命名空间裁决。未登记 operation 或无效 payload 返回 `VALIDATION_FAILED`。
 
-| 字段 | 规则 |
-| --- | --- |
-| `requestId` | 由 SDK 在单个插件页面中生成；宿主必须原样回传。 |
-| `pluginCode` | SDK 从页面 `meta[name="treasure-plugin-code"]` 取得；宿主据此定位插件上下文。 |
-| `action` | 标识受支持的宿主能力；未知 action 必须以错误响应拒绝。 |
-| `code` | `1` 成功，`0` 通用错误，`-1` 参数错误，`-2` 权限错误，`-3` 未找到。 |
+## 安全边界
 
-## 3. 消息时序
+- 文件读取必须使用 `FileReference`；写入必须使用 `DirectoryReference` 与单个文件名，或使用 `saveDialog` 返回的宿主签发可写文件引用。路径绝不回传给插件。
+- 目录选择得到的是当前会话可用的引用。需要跨重启使用时，插件以源码中的稳定 `permissionKey` 调用 `permissions.grantDirectory`；宿主保存真实路径和目录授权记录，插件只得到 `DirectoryReference`，不保存路径或授权 ID。
+- 私有存储仅接受经过校验的相对键。
+- SQL 解析、CTE/表引用检查和命名空间重写完全由 Rust AST 执行；前端不得用正则作安全决定。
+- 运行时数据库拒绝 DDL、`PRAGMA`、`ATTACH`、`DETACH` 和多语句；安装/卸载迁移是宿主拥有的独立 AST 流程。
 
-```mermaid
-sequenceDiagram
-  participant P as 插件业务代码
-  participant S as treasure-sdk
-  participant H as Treasure 宿主
+## 兼容性
 
-  P->>S: 调用 SDK API
-  S->>H: BridgeRequest
-  H->>H: 校验来源、参数与权限
-  H-->>S: BridgeResponse
-  S-->>P: resolve / reject / 返回响应对象
-```
+2.0 不提供旧协议双轨兼容。旧 SDK 插件必须迁移后才能由 2.0 宿主运行；宿主应根据 `manifest.minPlatformVersion` 拒绝不兼容包。
 
-- 普通请求默认超时为 10 秒。
-- 目录选择、保存文件等需要用户交互的请求不设置 SDK 超时。
-- 响应必须携带匹配的 `requestId`；SDK 忽略不匹配或未知的响应。
-- 插件页面销毁时，SDK 应清理待处理请求和事件监听。
+## 已知契约缺口
 
-## 4. Action 约定
+当前 `ProductionBridge` 的响应监听只检查消息类型和 `requestId`，尚未再次校验 `event.source` 与 `event.origin`；请求发送端的 `targetOrigin` 也仍为 `'*'`。宿主已对请求来源做身份和 origin 校验，但这不能替代 SDK 响应端校验。后续应在初始化时确定父窗口 origin，并为伪造响应补契约测试。
 
-Action 是协议层的能力标识；参数形状和调用方式以 [SDK API 参考](API-REFERENCE.md) 为准。
+宿主目前会以 `{ type: 'treasure-menu-event', menuId, itemId }` 向活动插件发送菜单点击，但 SDK 尚未公开对应的类型化事件订阅和状态更新 API。该反向消息是内部实现，不属于 2.0 面向第三方的稳定能力注册表。后续补齐时必须定义来源校验、订阅/销毁生命周期、菜单状态同步和兼容策略，并同步迁移内置插件。
 
-| 能力域 | Action |
-| --- | --- |
-| 数据 | `query`、`execute`、`transaction` |
-| 文本与二进制文件 | `readFile`、`readBinaryFile`、`readDir`、`writeFile`、`writeBinaryFile`、`createFile`、`updateFile`、`createDir`、`mkdir`、`deleteFile`、`deleteDir` |
-| 系统对话框 | `selectDirectory`、`saveDialog` |
-| 插件设置 | `getSettings`、`saveSetting`、`getSettingByKey`、`saveSettingByKey` |
-| 菜单协作 | `registerMenu`、`unregisterMenu`、`updateMenuState` |
-| 可选宿主能力 | `log`、`sendNotification` |
-
-新增 action 时，必须同时更新宿主分发实现、SDK 类型与生产/开发态实现，并在本表登记；这是一项兼容性变更。
-
-## 5. 宿主反向事件
-
-当前定义的宿主反向事件如下：
-
-```ts
-interface MenuEvent {
-  type: 'treasure-menu-event';
-  menuId: string;
-  itemId: string;
-}
-```
-
-宿主只将菜单事件发送给对应的活动插件页面。插件可监听该事件并更新业务状态；事件不保证持久化或重放。
-
-## 6. 安全与兼容性责任
-
-- SDK 提供调用入口，不是权限裁决者；宿主必须验证请求来源、插件身份、参数和操作权限。
-- 数据请求必须由宿主进行表声明校验、命名空间重写与 SQL 安全检查。
-- 协议消息仅可包含 JSON 可序列化数据；二进制内容使用 Base64。
-- 新增字段应保持可选并向后兼容；删除或改变既有字段语义应提升主版本号。
-- 插件应通过可选 API 的存在性检测兼容旧宿主，不能假定新能力在所有平台版本中可用。
-
-## 7. 关联文档
-
-- [SDK API 参考](API-REFERENCE.md)
-- [插件研发指南](https://github.com/Luzenrocy/treasure-plugins/blob/main/docs/PLUGIN-DEVELOPMENT-GUIDE.md)
-- [Treasure 宿主](https://github.com/Luzenrocy/treasure)
+Treasure 2.0.0 的 `toResult` 对显式 `{ ok, error }` 可保持结构化错误码，但对宿主旧 `{ code, msg, data }` 的所有非成功响应暂时统一映射为 `INTERNAL`。因此 `permissions.getDirectory/revokeDirectory` 的“授权不存在”还不能稳定返回协议期望的 `GRANT_NOT_FOUND`。修复时应建立旧 code 到 `ResultErrorCode` 的显式映射并补契约测试，不能依赖中文消息文本。

@@ -1,0 +1,88 @@
+import type { Result } from './result';
+import type { DirectoryReference, FileReference, OpenDialogOptions, SaveDialogOptions, WriteFileInput } from './files';
+
+export type SqlStatement = { sql: string; tables: string[]; params?: unknown[] };
+export type Transport = <T>(operation: string, payload?: unknown) => Promise<Result<T>>;
+
+export interface DirectoryEntry {
+  name: string;
+  kind: 'file' | 'directory';
+  file?: FileReference;
+  directory?: DirectoryReference;
+}
+
+export interface Setting {
+  key: string;
+  value: string;
+}
+
+/** A stable, plugin-defined name for one durable directory permission. */
+export interface GrantDirectoryInput {
+  permissionKey: string;
+  directory: DirectoryReference;
+}
+
+export interface MenuItem {
+  id: string;
+  label: string;
+  enabled?: boolean;
+}
+export interface MenuRegistration {
+  menuId: string;
+  rootLabel: string;
+  submenuLabel?: string;
+  items: Array<MenuItem & { type?: 'normal' | 'check'; checked?: boolean }>;
+}
+
+export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error';
+
+/** Document rendering is performed in a host-owned isolated Webview. */
+
+/** Typed public SDK surface. Transport operation names are protocol internals. */
+export function createClient(transport: Transport) {
+  return {
+    files: {
+      openDialog: (options: OpenDialogOptions) => transport<FileReference[] | DirectoryReference>('files.openDialog', options),
+      saveDialog: (options: SaveDialogOptions) => transport<FileReference>('files.saveDialog', options),
+      readFile: (file: FileReference) => transport<Uint8Array>('files.readFile', { file }),
+      writeFile: (input: WriteFileInput) => transport<FileReference>('files.writeFile', input),
+    },
+    directories: {
+      list: (directory: DirectoryReference) => transport<DirectoryEntry[]>('directories.list', { directory }),
+      create: (input: { directory: DirectoryReference; name: string }) => transport<DirectoryReference>('directories.create', input),
+      remove: (input: { directory: DirectoryReference; name?: string }) => transport<void>('directories.remove', input),
+    },
+    storage: {
+      read: (key: string) => transport<Uint8Array>('storage.read', { key }),
+      write: (input: { key: string; data: Uint8Array }) => transport<void>('storage.write', input),
+      remove: (key: string) => transport<void>('storage.remove', { key }),
+    },
+    database: {
+      query: <T>(statement: SqlStatement) => transport<{ rows: T[] }>('database.query', statement),
+      execute: <T>(statement: SqlStatement) => transport<{ affectedRows: number; lastInsertId?: number; rows?: T[] }>('database.execute', statement),
+      transaction: (statements: SqlStatement[]) => transport<Array<{ affectedRows: number; lastInsertId?: number }>>('database.transaction', { statements }),
+    },
+    settings: {
+      get: (key: string) => transport<Setting>('settings.get', { key }),
+      set: (setting: Setting) => transport<void>('settings.set', setting),
+      list: () => transport<Setting[]>('settings.list'),
+    },
+    permissions: {
+      grantDirectory: (input: GrantDirectoryInput) => transport<DirectoryReference>('permissions.grantDirectory', input),
+      getDirectory: (permissionKey: string) => transport<DirectoryReference>('permissions.getDirectory', { permissionKey }),
+      revokeDirectory: (permissionKey: string) => transport<void>('permissions.revokeDirectory', { permissionKey }),
+    },
+    menus: {
+      register: (registration: MenuRegistration) => transport<void>('menus.register', registration),
+      unregister: (id: string) => transport<void>('menus.unregister', { id }),
+    },
+    notifications: {
+      send: (input: { title: string; body: string }) => transport<void>('notifications.send', input),
+    },
+    logs: {
+      write: (input: { level: LogLevel; category: string; message: string; details?: unknown }) => transport<void>('logs.write', input),
+    },
+  };
+}
+
+export type TreasureClient = ReturnType<typeof createClient>;

@@ -1,6 +1,6 @@
 {
   "name": "treasure-sdk",
-  "version": "1.0.8",
+  "version": "2.0.0",
   "type": "module",
   "description": "Treasure 插件 SDK — 插件与宿主通信的统一接口",
   "repository": {
@@ -30,6 +30,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "pack:check": "npm pack --dry-run",
     "prepublishOnly": "npm run build"
@@ -42,10 +44,9 @@
   "devDependencies": {
     "@types/handlebars": "^4.0.40",
     "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^4.1.10",
     "tsup": "^8.0.0",
-    "typescript": "~5.6.0"
-  },
-  "optionalDependencies": {
-    "sql.js": "^1.11.0"
+    "typescript": "~5.6.0",
+    "vitest": "^4.1.10"
   }
 }
