@@ -36,7 +36,7 @@ if (!selected.ok) {
 | 数据类型 | 迁移后的规则 |
 | --- | --- |
 | 用户文件 | 通过 `files.openDialog` 获取引用，再用 `files.readFile` 读取。 |
-| 用户目录 | 选择目录后用 `permissions.grantDirectory` 绑定；应用启动时用 `permissions.getDirectory` 恢复。 |
+| 用户目录 | 选择后先 `settings.set({ key, directory })`，再用 `permissions.grantDirectory` 绑定；启动时读取目录设置中的 `accessGrantId`、`pathHash`，用 `permissions.verifyDirectoryGrant` 恢复。 |
 | 导出文件 | 业务确定文件名时在目录引用内写入；需要用户改名时使用 `files.saveDialog`。 |
 | 插件私有文件 | 使用 `storage` 和相对键；绝对路径、`..` 与空路径段会被拒绝。 |
 | 系统设置 | 在 Treasure 系统设置模块中管理；插件通过 `settings.get/list` 读取当前值。 |
@@ -51,7 +51,7 @@ if (!selected.ok) {
 | `FILE_TOO_LARGE` | 单次文件或私有存储读写不得超过 32 MiB。 |
 | `NOT_FOUND`、`IO_ERROR`、`CONFLICT`、`UNSUPPORTED`、`INTERNAL` | 记录上下文，按业务提供提示或重试。 |
 
-Treasure 2.0.0 的旧响应转换尚未把目录授权查询或撤销失败稳定映射为 `GRANT_NOT_FOUND`，可能返回 `INTERNAL`。目录恢复流程应记录诊断并允许用户重新选择，不要匹配错误消息文本。
+目录授权验证失败时，目录恢复流程应记录诊断并允许用户重新选择，不要匹配错误消息文本。
 
 ## 5. 运行与验证
 

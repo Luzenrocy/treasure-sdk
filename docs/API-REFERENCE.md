@@ -21,8 +21,8 @@ initTreasure(); // 在挂载应用前调用一次
 | --- | --- | --- | --- |
 | 文件引用 `FileReference` | 用户通过文件选择框选择文件；或目录列举返回文件 | `files.readFile` 读取；`files.writeFile` 写入另存为目标 | 引用代替真实路径，只能由所属插件使用。 |
 | 目录引用 `DirectoryReference` | 用户通过目录选择框选择目录；或创建/列举目录返回 | `directories.*` 管理目录树；`files.writeFile` 写文件 | 选择结果在当前会话可用；调用 `permissions.grantDirectory` 后，根目录才可跨重启恢复。派生子目录应按需重新获取。 |
-| 目录授权键 `permissionKey` | 插件开发者在源码中定义固定英文键，例如 `notes_directory` | `permissions.grantDirectory/getDirectory/revokeDirectory` | 不是路径、系统设置值、随机值或宿主授权 ID；同一键标识该插件的一项目录访问授权。 |
-| 系统设置项 | 插件在 manifest 中声明，或通过 `settings.set` 写入 | 在 Treasure 的系统设置模块中统一展示和管理；插件用 `settings.get/list` 读取当前值 | 仅保存字符串键值，不用于文件访问。 |
+| 目录授权键 `permissionKey` | 插件开发者在源码中定义固定英文键，例如 `notes_directory` | `permissions.grantDirectory/verifyDirectoryGrant/revokeDirectory` | 不是路径、系统设置值、随机值或宿主授权 ID；同一键标识该插件的一项目录访问授权。 |
+| 系统设置项 | 插件在 manifest 中声明，或通过 `settings.set` 写入 | 在 Treasure 的系统设置模块中统一展示和管理；插件用 `settings.get/list` 读取当前值 | 普通项返回 `{ key, value }`；目录项返回授权 ID、路径哈希和目录名，不返回路径。 |
 | 插件数据区域 | 插件调用 `storage.write` | 保存附件内容、缓存、索引等不需要让用户直接管理的数据 | 实际目录：`<Treasure 应用数据目录>/plugin/<插件编码>/data/`；使用相对键访问；卸载插件时宿主清理。 |
 
 “授权”指用户在系统选择窗口明确选择某个文件或目录后，宿主允许该插件通过相应引用访问该资源。插件不能自行创建或伪造授权记录；若需要持久化一个用户选择的目录，只能把该选择结果与源码内固定的 `permissionKey` 交给 `permissions.grantDirectory`。
@@ -147,13 +147,13 @@ if (!saved.ok) showError(saved.error.message);
 
 ## 5. `settings` 模块：系统设置交互
 
-该模块与 Treasure 的系统设置模块交互，设置值统一使用字符串。插件通常在 manifest 中声明设置项，由系统设置页面展示和管理；插件通过 SDK 读取当前值，或在业务确有需要时更新。系统设置适合主题、默认视图、筛选条件和开关值等，不用于保存文件路径、目录引用或授权记录。
+该模块与 Treasure 的系统设置模块交互。普通设置使用字符串；`dir` 设置只通过目录引用写入，读取时仅返回目录名、路径摘要与授权 ID，绝不返回绝对路径。
 
 | 方法 | 何时调用 | 参数 | 宿主保存什么 | 成功返回 `result.value` | 下一步怎么用 |
 | --- | --- | --- | --- | --- | --- |
-| `settings.set` | 需要更新系统设置值时 | `{ key, value }` | 当前插件下该键对应的字符串值 | `void` | 保存完成即可。 |
-| `settings.get` | 插件启动或需要读取某个系统设置项时 | `key` | 不新增数据，只读取已保存值 | `{ key, value }` | 使用 `value` 初始化界面或业务逻辑。 |
-| `settings.list` | 需要一次读取当前插件的全部系统设置项时 | 无 | 不新增数据，只读取全部设置项 | `Array<{ key, value }>` | 遍历结果或转换为插件配置对象。 |
+| `settings.set` | 需要更新系统设置值时 | 普通项用 `{ key, value }`；目录项用 `{ key, directory }` | 目录项会更新设置路径并清空旧授权绑定；不会创建授权 | `void` | 目录项更新后应调用 `grantDirectory` 建立新授权。 |
+| `settings.get` | 插件启动或需要读取某个系统设置项时 | `key` | 不新增数据，只读取已保存值 | 普通项 `{ key, value }`；目录项 `{ key, paramType: 'dir', accessGrantId, pathHash, directoryName }` | 目录项以授权 ID 和路径摘要调用 `verifyDirectoryGrant`。 |
+| `settings.list` | 需要一次读取当前插件的全部系统设置项时 | 无 | 不新增数据，只读取全部设置项 | 上述设置对象数组 | 遍历结果或转换为插件配置对象。 |
 
 ### 5.1 读取与更新系统设置项
 
@@ -173,7 +173,7 @@ if (theme.ok) applyTheme(theme.value.value);
 
 `settings` 只管理系统设置值；目录访问授权由独立的 `permissions` 模块管理。它适用于用户明确选择并允许插件访问的目录，例如笔记目录、项目目录或图片目录。授权记录与稳定的 `permissionKey` 绑定，因此插件在以后启动时可以重新取得根目录引用。
 
-`permissionKey` 是插件开发者在源码中固定写下的英文标识，例如 `notes_directory`。它不是随机值、绝对路径、用户输入、系统设置值或宿主授权 ID。同一个键标识本插件的一项目录访问授权；再次授权会替换该键对应的目录，撤销只删除授权记录，不删除用户目录。
+`permissionKey` 是插件开发者在源码中固定写下的英文标识，例如 `notes_directory`。它不是随机值、绝对路径、用户输入、系统设置值或宿主授权 ID。同一个键标识本插件的一项目录访问授权；再次授权会撤销旧的有效授权并新建记录，撤销不删除用户目录。
 
 若 manifest 同时声明 `param_type: "dir"` 供宿主设置页展示，`permissionKey` 应与该项的 `param_key` 相同。这样宿主能把目录的显示值与授权记录投影到同一设置项；插件仍只调用 `permissions`，不通过 `settings` 读取路径或授权 ID。
 
@@ -192,9 +192,11 @@ if (theme.ok) applyTheme(theme.value.value);
 
 | 方法 | 何时调用与参数 | Treasure 保存或恢复的内容 | 成功结果与后续使用 |
 | --- | --- | --- | --- |
-| `permissions.grantDirectory` | 用户选择目录后传入 `{ permissionKey, directory }` | 为当前插件和稳定键保存或更新根目录授权记录 | 返回 `DirectoryReference`；可用于目录操作或在目录中写文件。 |
-| `permissions.getDirectory` | 插件启动或引用失效后传入 `permissionKey` | 查询该键对应的有效授权记录，并重新签发根目录引用 | 返回 `DirectoryReference`；从根目录重新列举，不复用旧子引用。 |
-| `permissions.revokeDirectory` | 用户取消目录访问时传入 `permissionKey` | 删除授权记录，不删除用户目录 | 返回 `void`；清理派生引用并引导用户按需重选。 |
+| `permissions.grantDirectory` | 用户选择目录后传入 `{ permissionKey, directory }` | 撤销该键旧的有效授权、新增授权记录，并仅更新设置的 `access_grant_id` 绑定 | 返回 `{ accessGrantId, directory }`；`directory` 可立即用于目录操作。 |
+| `permissions.verifyDirectoryGrant` | 启动或引用失效后传入 `{ permissionKey, accessGrantId, pathHash }` | 只校验授权记录、插件身份、键、状态与路径哈希；不读取或更新设置 | 返回 `{ accessGrantId, directory }`；从根目录重新列举，不复用旧子引用。 |
+| `permissions.revokeDirectory` | 用户取消目录访问时传入 `permissionKey` | 将有效授权标为 `revoked`，不删除用户目录或授权历史 | 返回 `void`；清理派生引用并引导用户按需重选。 |
+
+授权历史规则：更换目录、重新授权和主动撤销均保留旧记录并标记为 `revoked`；仅当插件被卸载时，Treasure 才物理删除该插件的全部授权记录。
 
 ### 6.1 建立目录授权并在后续启动中重新取得引用
 
@@ -207,30 +209,31 @@ const DIRECTORY_PERMISSION_KEY = 'notes_directory';
 const selected = await files.openDialog({ kind: 'directory', title: '选择文件存储目录' });
 if (!selected.ok || Array.isArray(selected.value)) return; // CANCELLED 时结束流程，并收窄目录类型
 
-// 2. 立即授权：宿主保存该目录的授权记录。
+// 2. 先写目录设置；这会更新路径并清空旧授权绑定，但不会授权。
+const configured = await settings.set({ key: DIRECTORY_PERMISSION_KEY, directory: selected.value });
+if (!configured.ok) return showError(configured.error.message);
+
+// 3. 再建立授权并绑定设置。
 const bound = await permissions.grantDirectory({
   permissionKey: DIRECTORY_PERMISSION_KEY,
   directory: selected.value,
 });
 if (!bound.ok) return showError(bound.error.message);
 
-// 3. 当前会话中可直接使用 bound.value。
-const firstEntries = await directories.list(bound.value);
+// 4. 当前会话中可直接使用 bound.value.directory。
+const firstEntries = await directories.list(bound.value.directory);
 
-// 4. 插件下次启动时：恢复目录引用，再继续目录操作。
-const restored = await permissions.getDirectory(DIRECTORY_PERMISSION_KEY);
-if (restored.ok) {
-  const entries = await directories.list(restored.value);
+// 5. 插件下次启动时：读取目录设置并验证授权，再继续目录操作。
+const savedDirectory = await settings.get(DIRECTORY_PERMISSION_KEY);
+if (savedDirectory.ok && savedDirectory.value.paramType === 'dir' && savedDirectory.value.accessGrantId && savedDirectory.value.pathHash) {
+  const restored = await permissions.verifyDirectoryGrant({ permissionKey: DIRECTORY_PERMISSION_KEY, accessGrantId: savedDirectory.value.accessGrantId, pathHash: savedDirectory.value.pathHash });
+  if (!restored.ok) return showError(restored.error.message);
+  const entries = await directories.list(restored.value.directory);
   if (!entries.ok) showError(entries.error.message);
-} else if (restored.error.code === 'NOT_FOUND' || restored.error.code === 'GRANT_NOT_FOUND') {
-  // 显示“请选择文件存储目录”，引导用户重新选择。
-} else if (restored.error.code === 'INTERNAL') {
-  // Treasure 2.0.0 当前可能把“授权不存在/已撤销”的旧宿主响应归到 INTERNAL。
-  // 记录日志并允许用户重新选择；宿主修复响应映射后可移除此兼容分支。
 }
 ```
 
-宿主保存真实路径和目录授权记录；插件不会收到路径，只会收到 `DirectoryReference`。目录内由 `directories.list` 或 `directories.create` 得到的子目录引用不应自行保存；应用重启后从 `permissions.getDirectory` 返回的根目录重新列举即可。
+宿主保存真实路径和目录授权记录；插件不会收到路径，只会收到 `DirectoryReference` 及目录设置的安全元数据。目录内由 `directories.list` 或 `directories.create` 得到的子目录引用不应自行保存；应用重启后验证授权并从新的根目录引用重新列举。
 
 ## 7. `storage` 模块：插件私有存储
 
@@ -337,7 +340,7 @@ SDK 只在 Treasure 桌面宿主创建的插件 iframe 中运行。插件的 `np
 
 当前 `files.openDialog` 的 TypeScript 成功值仍是 `FileReference[] | DirectoryReference`，不会根据 `kind` 自动收窄。目录选择后使用 `!Array.isArray(result.value)`，文件选择后使用 `Array.isArray(result.value)`；这是类型层限制，运行时仍按 `kind` 返回固定形态。
 
-Treasure 2.0.0 还有一个宿主响应映射缺口：`permissions.getDirectory/revokeDirectory` 在授权不存在或已撤销时，底层旧响应是权限错误，但 `toResult` 当前把所有非成功旧响应归为 `INTERNAL`，尚未映射成 SDK 声明的 `GRANT_NOT_FOUND`。插件在该版本上应把目录恢复阶段的 `INTERNAL` 作为“记录诊断并允许重新选择”的可恢复分支，不能用错误消息文本判断。宿主修复位置为 `treasure/src/bridge/pluginBridge.ts` 的 `toResult`。
+目录授权验证失败时，插件应将其视为“重新选择目录”的可恢复分支，不要依赖错误消息文本。
 
 ## 11. SDK 2.0 不兼容接口变更
 

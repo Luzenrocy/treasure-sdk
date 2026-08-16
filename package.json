@@ -1,6 +1,6 @@
 {
   "name": "treasure-sdk",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
   "description": "Treasure 插件 SDK — 插件与宿主通信的统一接口",
   "repository": {

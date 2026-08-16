@@ -11,6 +11,8 @@ describe('createClient', () => {
     expect(typeof client.database.query).toBe('function');
     expect(typeof client.settings.get).toBe('function');
     expect(typeof client.permissions.grantDirectory).toBe('function');
+    expect(typeof client.permissions.verifyDirectoryGrant).toBe('function');
+    expect(client.permissions).not.toHaveProperty('getDirectory');
     expect(client.settings).not.toHaveProperty('getStorageDirectory');
     expect(typeof client.menus.register).toBe('function');
     expect(typeof client.notifications.send).toBe('function');
@@ -36,15 +38,15 @@ describe('createClient', () => {
       client.directories.list(directory), client.directories.create({ directory, name: '子目录' }), client.directories.remove({ directory, name: '子目录' }),
       client.storage.read('附件/资料.txt'), client.storage.write({ key: '附件/资料.txt', data: new Uint8Array([1]) }), client.storage.remove('附件/资料.txt'),
       client.database.execute(statement), client.database.transaction([statement]),
-      client.settings.get('theme'), client.settings.set({ key: 'theme', value: 'dark' }), client.settings.list(),
-      client.permissions.grantDirectory({ permissionKey: 'notes_directory', directory }), client.permissions.getDirectory('notes_directory'), client.permissions.revokeDirectory('notes_directory'),
+      client.settings.get('theme'), client.settings.set({ key: 'theme', value: 'dark' }), client.settings.set({ key: 'storage_dir', directory }), client.settings.list(),
+      client.permissions.grantDirectory({ permissionKey: 'notes_directory', directory }), client.permissions.verifyDirectoryGrant({ permissionKey: 'notes_directory', accessGrantId: 'grant-1', pathHash: 'abc' }), client.permissions.revokeDirectory('notes_directory'),
       client.menus.register({ menuId: 'export', rootLabel: 'File', items: [{ id: 'export', label: '导出' }] }), client.menus.unregister('export'),
       client.notifications.send({ title: '完成', body: '已导出' }), client.logs.write({ level: 'info', category: 'test', message: 'ok' }),
     ]);
     expect(call.mock.calls.map(([operation]) => operation)).toEqual(expect.arrayContaining([
       'files.openDialog', 'files.saveDialog', 'files.readFile', 'files.writeFile', 'directories.list', 'directories.create', 'directories.remove',
       'storage.read', 'storage.write', 'storage.remove', 'database.execute', 'database.transaction', 'settings.get', 'settings.set', 'settings.list',
-      'permissions.grantDirectory', 'permissions.getDirectory', 'permissions.revokeDirectory',
+      'permissions.grantDirectory', 'permissions.verifyDirectoryGrant', 'permissions.revokeDirectory',
       'menus.register', 'menus.unregister', 'notifications.send', 'logs.write',
     ]));
   });

@@ -11,15 +11,39 @@ export interface DirectoryEntry {
   directory?: DirectoryReference;
 }
 
-export interface Setting {
+export interface PlainSetting {
   key: string;
   value: string;
+  paramType?: never;
 }
+
+export interface DirectorySetting {
+  key: string;
+  paramType: 'dir';
+  accessGrantId: string | null;
+  pathHash: string | null;
+  directoryName: string | null;
+}
+
+export type Setting = PlainSetting | DirectorySetting;
+export type SetSettingInput = PlainSetting | { key: string; directory: DirectoryReference };
 
 /** A stable, plugin-defined name for one durable directory permission. */
 export interface GrantDirectoryInput {
   permissionKey: string;
   directory: DirectoryReference;
+}
+
+/** Persistent authorization identity plus a newly issued session reference. */
+export interface DirectoryGrant {
+  accessGrantId: string;
+  directory: DirectoryReference;
+}
+
+export interface VerifyDirectoryGrantInput {
+  permissionKey: string;
+  accessGrantId: string;
+  pathHash: string;
 }
 
 export interface MenuItem {
@@ -64,12 +88,12 @@ export function createClient(transport: Transport) {
     },
     settings: {
       get: (key: string) => transport<Setting>('settings.get', { key }),
-      set: (setting: Setting) => transport<void>('settings.set', setting),
+      set: (setting: SetSettingInput) => transport<void>('settings.set', setting),
       list: () => transport<Setting[]>('settings.list'),
     },
     permissions: {
-      grantDirectory: (input: GrantDirectoryInput) => transport<DirectoryReference>('permissions.grantDirectory', input),
-      getDirectory: (permissionKey: string) => transport<DirectoryReference>('permissions.getDirectory', { permissionKey }),
+      grantDirectory: (input: GrantDirectoryInput) => transport<DirectoryGrant>('permissions.grantDirectory', input),
+      verifyDirectoryGrant: (input: VerifyDirectoryGrantInput) => transport<DirectoryGrant>('permissions.verifyDirectoryGrant', input),
       revokeDirectory: (permissionKey: string) => transport<void>('permissions.revokeDirectory', { permissionKey }),
     },
     menus: {

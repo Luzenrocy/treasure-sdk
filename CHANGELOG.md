@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.1.0
+
+### Changed
+
+- Directory settings now retain authorization metadata (accessGrantId, pathHash,
+  and directoryName) instead of exposing an absolute filesystem path.
+- settings.set accepts a selected directory reference directly, and
+  permissions.grantDirectory returns both the directory reference and its stable
+  grant ID.
+- Added permissions.verifyDirectoryGrant for validating a previously stored
+  directory authorization.
+
+### Compatibility note
+
+- permissions.getDirectory has been replaced by
+  permissions.verifyDirectoryGrant. Update plugins and the Treasure host
+  together when adopting this release.
+
 ## 2.0.0
 
 ### Breaking changes

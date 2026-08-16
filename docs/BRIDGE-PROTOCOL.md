@@ -19,7 +19,7 @@
 | storage | `storage.read/write/remove` | 2.0.0 |
 | database | `database.query/execute/transaction` | 2.0.0 |
 | settings | `settings.get/set/list` | 2.0.0 |
-| permissions | `permissions.grantDirectory/getDirectory/revokeDirectory` | 2.0.0 |
+| permissions | `permissions.grantDirectory/verifyDirectoryGrant/revokeDirectory` | 2.0.0 |
 | menus | `menus.register/unregister` | 2.0.0 |
 | notifications | `notifications.send` | 2.0.0 |
 | logs | `logs.write` | 2.0.0 |
@@ -29,7 +29,8 @@
 ## 安全边界
 
 - 文件读取必须使用 `FileReference`；写入必须使用 `DirectoryReference` 与单个文件名，或使用 `saveDialog` 返回的宿主签发可写文件引用。路径绝不回传给插件。
-- 目录选择得到的是当前会话可用的引用。需要跨重启使用时，插件以源码中的稳定 `permissionKey` 调用 `permissions.grantDirectory`；宿主保存真实路径和目录授权记录，插件只得到 `DirectoryReference`，不保存路径或授权 ID。
+- 目录选择得到的是当前会话可用的引用。插件先用 `settings.set({ key, directory })` 保存目录设置，再以稳定 `permissionKey` 调用 `permissions.grantDirectory` 创建授权绑定。后续从目录设置取得 `accessGrantId` 和 `pathHash`，用 `permissions.verifyDirectoryGrant` 获得新的会话 `DirectoryReference`；路径不会回传给插件。
+- 授权生命周期：更换目录、重新授权或主动撤销时，宿主将旧授权标为 `revoked` 并保留历史；只有插件卸载时，才按插件编码物理删除其全部授权记录。
 - 私有存储仅接受经过校验的相对键。
 - SQL 解析、CTE/表引用检查和命名空间重写完全由 Rust AST 执行；前端不得用正则作安全决定。
 - 运行时数据库拒绝 DDL、`PRAGMA`、`ATTACH`、`DETACH` 和多语句；安装/卸载迁移是宿主拥有的独立 AST 流程。
@@ -44,4 +45,4 @@
 
 宿主目前会以 `{ type: 'treasure-menu-event', menuId, itemId }` 向活动插件发送菜单点击，但 SDK 尚未公开对应的类型化事件订阅和状态更新 API。该反向消息是内部实现，不属于 2.0 面向第三方的稳定能力注册表。后续补齐时必须定义来源校验、订阅/销毁生命周期、菜单状态同步和兼容策略，并同步迁移内置插件。
 
-Treasure 2.0.0 的 `toResult` 对显式 `{ ok, error }` 可保持结构化错误码，但对宿主旧 `{ code, msg, data }` 的所有非成功响应暂时统一映射为 `INTERNAL`。因此 `permissions.getDirectory/revokeDirectory` 的“授权不存在”还不能稳定返回协议期望的 `GRANT_NOT_FOUND`。修复时应建立旧 code 到 `ResultErrorCode` 的显式映射并补契约测试，不能依赖中文消息文本。
+目录授权验证失败必须返回结构化错误码；插件将其视为可重新选择目录的分支，不能依赖错误消息文本。

@@ -11,7 +11,7 @@ export { result } from './result';
 export type { Result, ResultErrorCode } from './result';
 export type { FileReference, DirectoryReference, OpenDialogOptions, SaveDialogOptions, WriteFileInput } from './files';
 export { createClient } from './client';
-export type { TreasureClient, SqlStatement, DirectoryEntry, Setting, GrantDirectoryInput, MenuItem, MenuRegistration, LogLevel } from './client';
+export type { TreasureClient, SqlStatement, DirectoryEntry, Setting, PlainSetting, DirectorySetting, SetSettingInput, GrantDirectoryInput, DirectoryGrant, VerifyDirectoryGrantInput, MenuItem, MenuRegistration, LogLevel } from './client';
 import { getTreasure as client } from './bridge';
 
 /** Stable capability exports for code that prefers module-style imports. */
@@ -26,11 +26,11 @@ export const database = {
   transaction: (statements: import('./client').SqlStatement[]) => client().database.transaction(statements),
 };
 export const settings = {
-  get: (key: string) => client().settings.get(key), set: (setting: import('./client').Setting) => client().settings.set(setting), list: () => client().settings.list(),
+  get: (key: string) => client().settings.get(key), set: (setting: import('./client').SetSettingInput) => client().settings.set(setting), list: () => client().settings.list(),
 };
 export const permissions = {
   grantDirectory: (input: import('./client').GrantDirectoryInput) => client().permissions.grantDirectory(input),
-  getDirectory: (permissionKey: string) => client().permissions.getDirectory(permissionKey),
+  verifyDirectoryGrant: (input: import('./client').VerifyDirectoryGrantInput) => client().permissions.verifyDirectoryGrant(input),
   revokeDirectory: (permissionKey: string) => client().permissions.revokeDirectory(permissionKey),
 };
 export const menus = {
