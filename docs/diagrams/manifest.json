@@ -1,0 +1,8 @@
+{
+  "diagrams": {
+    "ecosystem": "e906cc2aa7cd564a4cb74458bcc3e260a667e4ba700784413c4d5bda374dd9d8",
+    "plugin-lifecycle": "f8e2dabe1df87ba84d915dd51d8e135c5e82fe1cdef974411b8515dc96a9abae",
+    "sdk-architecture": "dcd4260562d45068af812b0539f92277afc8c3e13f8e06a0439d9272e6280420",
+    "data-security": "22425985fb2e4ba078ca91e10f44adc576e4ebc794d8f9cd8a2d39bf54e3515c"
+  }
+}

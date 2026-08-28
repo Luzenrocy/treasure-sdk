@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -12,10 +13,17 @@ const diagramNames = ['ecosystem', 'plugin-lifecycle', 'sdk-architecture', 'data
 
 describe('npm README diagrams', () => {
   it('uses versioned SVG assets generated from committed Mermaid sources', () => {
+    const diagramDirectory = resolve(root, 'docs', 'diagrams');
+    const manifest = JSON.parse(
+      readFileSync(resolve(diagramDirectory, 'manifest.json'), 'utf8'),
+    ) as { diagrams: Record<string, string> };
+
     for (const name of diagramNames) {
-      const diagramDirectory = resolve(root, 'docs', 'diagrams');
       expect(existsSync(resolve(diagramDirectory, `${name}.mmd`))).toBe(true);
       expect(existsSync(resolve(diagramDirectory, `${name}.svg`))).toBe(true);
+      expect(manifest.diagrams[name]).toBe(
+        createHash('sha256').update(readFileSync(resolve(diagramDirectory, `${name}.mmd`))).digest('hex'),
+      );
       expect(readme).toContain(
         `https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v${packageJson.version}/docs/diagrams/${name}.svg`,
       );
