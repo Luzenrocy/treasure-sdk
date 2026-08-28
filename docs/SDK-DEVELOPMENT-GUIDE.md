@@ -10,7 +10,7 @@ npm run dev       # 监听 tsup 构建
 npm run build     # 构建 ESM、CJS、类型声明与 CLI
 ```
 
-`npm run build` 使用 `tsup` 生成 `dist/index.js`、`dist/index.cjs`、类型声明和 `dist/cli/index.js`。发布前应执行 `npm test`、`npm run test:coverage`、`npm run typecheck` 与 `npm run build`；新增和修改模块行、分支、函数、语句覆盖率均不得低于 80%。
+`npm run build` 使用 `tsup` 生成 `dist/index.js`、`dist/index.cjs`、类型声明和 `dist/cli/index.js`。发布前应执行 `npm test`、`npm run test:coverage`、`npm run typecheck` 与 `npm run build`；新增和修改模块行、分支、函数、语句覆盖率均不得低于 80%。README 中的图表由 `docs/diagrams/*.mmd` 生成 SVG；修改图表后执行 `npm run docs:diagrams`。`npm version patch/minor/major` 会在版本号更新后自动生成并暂存 SVG 与版本化图片链接；随后执行 `npm run docs:diagrams:check` 可确认它们已同步。
 
 ## 2. 源码模块职责
 
@@ -137,7 +137,7 @@ npm run build     # 构建 ESM、CJS、类型声明与 CLI
 - [ ] API 参考、桥接协议、迁移说明和模板对同一方法的“保留/移除”结论一致；尤其不得将正在导出的稳定 API 写为已移除。
 - [ ] 模板或参考插件至少覆盖：`Result<T>` 分支、参数化 SQL/迁移、文件选择读取、目录或另存为写入、私有存储及授权恢复的适用方式。
 - [ ] CLI 与模板变更已通过新建插件项目验证。
-- [ ] `npm test`、`npm run test:coverage`、`npm run typecheck` 与 `npm run build` 成功。
+- [ ] `npm test`、`npm run test:coverage`、`npm run typecheck`、`npm run docs:diagrams:check` 与 `npm run build` 成功。
 - [ ] 发布前检查 `package.json` 的版本、`exports`、`bin` 与 `files` 是否覆盖新增的公开资源。
 
 ## 7. 文档边界

@@ -45,40 +45,13 @@ Treasure 是一个以插件扩展为核心的桌面应用平台。`treasure-sdk`
 | [treasure-plugins](https://github.com/Luzenrocy/treasure-plugins) | 插件集合 | 承载面向用户的具体功能与工具实现。 |
 | [Tauri v2](https://v2.tauri.app) | 桌面运行时 | 为 Treasure 宿主提供跨平台窗口、文件系统、系统对话框和 Rust 侧能力。 |
 
-```mermaid
-flowchart LR
-  U["最终用户"] --> H["Treasure 桌面宿主"]
-  P["业务插件 / 工具"] --> S["treasure-sdk"]
-  S -->|"postMessage"| H
-  H --> T["Tauri v2 与 Rust 能力"]
-  H --> D["SQLite / 平台服务"]
-  H --> F["文件系统与原生对话框"]
-  H --> M["原生菜单"]
-```
+![Treasure 生态架构图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.1.1/docs/diagrams/ecosystem.svg)
 
 ## 产品原型与功能逻辑
 
 从用户视角，Treasure 提供一个可安装、可切换的工具工作台：用户在宿主中打开插件，插件以独立页面呈现业务界面；需要数据或系统能力时，SDK 将请求交由宿主执行并返回结构化结果。
 
-```mermaid
-sequenceDiagram
-  participant U as 用户
-  participant H as Treasure 宿主
-  participant P as 插件 iframe
-  participant S as treasure-sdk
-  participant R as Tauri / SQLite
-
-  U->>H: 打开或切换插件
-  H->>P: 创建 iframe，加载插件入口
-  P->>S: initTreasure()
-  S->>H: 发送能力请求
-  H->>H: 身份、SQL、表权限与参数校验
-  H->>R: 调用 SQLite / 文件 / 对话框等能力
-  R-->>H: 返回执行结果
-  H-->>S: 响应 requestId 对应结果
-  S-->>P: Promise resolve / 封装响应
-  P-->>U: 更新插件界面
-```
+![插件生命周期时序图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.1.1/docs/diagrams/plugin-lifecycle.svg)
 
 ### 插件生命周期
 
@@ -93,15 +66,7 @@ sequenceDiagram
 
 SDK 由“公开 API、宿主桥接、开发工具”构成。
 
-```mermaid
-flowchart TB
-  A["插件业务代码"] --> I["index.ts 公共导出"]
-  I --> B["initTreasure / getTreasure"]
-  I --> W["类型化能力模块"]
-  B --> PB["ProductionBridge"]
-  PB --> PM["window.parent.postMessage"]
-  PM --> HB["Treasure 宿主能力注册表"]
-```
+![Treasure SDK 技术架构图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.1.1/docs/diagrams/sdk-architecture.svg)
 
 ### 受控宿主桥接
 
@@ -142,15 +107,7 @@ CLI 使用 `npx treasure-sdk create <plugin-code>` 按需下载并执行，不�
 
 数据访问的核心原则是：**插件发起意图，宿主决定是否执行**。SDK 不是权限最终裁决者，所有关键 SQL 规则都由宿主实施。
 
-```mermaid
-flowchart LR
-  Q["插件 SQL + tables 声明"] --> V["声明与语句校验"]
-  V -->|"不通过"| X["返回错误"]
-  V -->|"通过"| R["将裸表名重写为插件前缀"]
-  R --> S["安全规则校验"]
-  S -->|"不通过"| X
-  S -->|"通过"| E["PluginSqlExecutor / SQLite"]
-```
+![数据安全模型图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.1.1/docs/diagrams/data-security.svg)
 
 - 插件查询、写入和事务必须显式声明使用到的 `tables`。
 - 宿主将裸表名重写为 `plugin_{pluginCode}_{table}`，实现插件间表空间隔离。
@@ -173,6 +130,7 @@ npm run dev       # 监听构建 SDK
 npm run build     # 产出 ESM、CJS、类型声明和 CLI
 npm run typecheck
 npm test
+npm run docs:diagrams # Mermaid 源图生成 npm 可展示的 SVG
 npm run pack:check
 ```
 
@@ -207,8 +165,11 @@ treasure-sdk/
 ├── docs/
 │   ├── BRIDGE-PROTOCOL.md       # 宿主与 SDK 的通信协议
 │   ├── API-REFERENCE.md         # SDK 公开接口参考
+│   ├── diagrams/                 # README Mermaid 源图及生成的 SVG
 │   ├── MIGRATION-2.0.md          # 1.x 插件迁移到 2.0
 │   └── SDK-DEVELOPMENT-GUIDE.md # SDK 自身维护与扩展指南
+├── scripts/
+│   └── generate-readme-diagrams.mjs # 同步 README 图与版本化图片链接
 └── package.json
 ```
 

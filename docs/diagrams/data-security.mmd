@@ -1,0 +1,7 @@
+flowchart LR
+  Q["插件 SQL + tables 声明"] --> V["声明与语句校验"]
+  V -->|"不通过"| X["返回错误"]
+  V -->|"通过"| R["将裸表名重写为插件前缀"]
+  R --> S["安全规则校验"]
+  S -->|"不通过"| X
+  S -->|"通过"| E["PluginSqlExecutor / SQLite"]

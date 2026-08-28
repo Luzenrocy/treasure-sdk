@@ -1,0 +1,7 @@
+flowchart TB
+  A["插件业务代码"] --> I["index.ts 公共导出"]
+  I --> B["initTreasure / getTreasure"]
+  I --> W["类型化能力模块"]
+  B --> PB["ProductionBridge"]
+  PB --> PM["window.parent.postMessage"]
+  PM --> HB["Treasure 宿主能力注册表"]

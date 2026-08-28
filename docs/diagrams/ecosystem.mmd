@@ -1,0 +1,8 @@
+flowchart LR
+  U["最终用户"] --> H["Treasure 桌面宿主"]
+  P["业务插件 / 工具"] --> S["treasure-sdk"]
+  S -->|"postMessage"| H
+  H --> T["Tauri v2 与 Rust 能力"]
+  H --> D["SQLite / 平台服务"]
+  H --> F["文件系统与原生对话框"]
+  H --> M["原生菜单"]

@@ -1,6 +1,6 @@
 {
   "name": "treasure-sdk",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "type": "module",
   "description": "Treasure 插件 SDK — 插件与宿主通信的统一接口",
   "repository": {
@@ -33,8 +33,11 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
+    "docs:diagrams": "node scripts/generate-readme-diagrams.mjs",
+    "docs:diagrams:check": "node scripts/generate-readme-diagrams.mjs --check",
+    "version": "npm run docs:diagrams && git add README.md docs/diagrams",
     "pack:check": "npm pack --dry-run",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run docs:diagrams:check && npm run build"
   },
   "dependencies": {
     "commander": "^12.1.0",
@@ -42,6 +45,7 @@
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
+    "@mermaid-js/mermaid-cli": "11.16.0",
     "@types/handlebars": "^4.0.40",
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^4.1.10",

@@ -97,6 +97,10 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  // Treasure 桌面端使用 tauri://localhost，需要跨域拉取调试插件的静态图标资源。
+  server: {
+    cors: true,
+  },
   build: {
     outDir: 'dist',
     assetsInlineLimit: 0,

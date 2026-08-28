@@ -1,0 +1,17 @@
+sequenceDiagram
+  participant U as 用户
+  participant H as Treasure 宿主
+  participant P as 插件 iframe
+  participant S as treasure-sdk
+  participant R as Tauri / SQLite
+
+  U->>H: 打开或切换插件
+  H->>P: 创建 iframe，加载插件入口
+  P->>S: initTreasure()
+  S->>H: 发送能力请求
+  H->>H: 身份、SQL、表权限与参数校验
+  H->>R: 调用 SQLite / 文件 / 对话框等能力
+  R-->>H: 返回执行结果
+  H-->>S: 响应 requestId 对应结果
+  S-->>P: Promise resolve / 封装响应
+  P-->>U: 更新插件界面

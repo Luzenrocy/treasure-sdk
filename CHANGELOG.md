@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.1.1
+
+### Fixed
+
+- Render README architecture diagrams as committed SVG assets so they display on
+  npmjs.com, where Mermaid code blocks are not rendered.
+
+### Changed
+
+- Added automated Mermaid SVG generation, versioned README image links, and CI
+  and publish-time checks that prevent diagram assets from becoming stale.
+
 ## 2.1.0
 
 ### Changed
