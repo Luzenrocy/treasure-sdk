@@ -29,4 +29,15 @@ describe('npm README diagrams', () => {
   it('regenerates and stages diagrams whenever npm bumps the package version', () => {
     expect(packageJson.scripts.version).toBe('npm run docs:diagrams && git add README.md docs/diagrams');
   });
+
+  it('uses a Puppeteer configuration compatible with GitHub Actions runners', () => {
+    const puppeteerConfig = JSON.parse(
+      readFileSync(resolve(root, 'scripts', 'puppeteer-mermaid.json'), 'utf8'),
+    ) as { args: string[] };
+
+    expect(puppeteerConfig.args).toEqual(expect.arrayContaining([
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+    ]));
+  });
 });

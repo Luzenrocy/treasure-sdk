@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -11,13 +11,14 @@ const packageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 const checkOnly = process.argv.includes('--check');
 const diagramNames = ['ecosystem', 'plugin-lifecycle', 'sdk-architecture', 'data-security'];
 const cliPath = join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'mmdc.cmd' : 'mmdc');
+const puppeteerConfigPath = join(root, 'scripts', 'puppeteer-mermaid.json');
 const assetBaseUrl = `https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v${packageJson.version}/docs/diagrams`;
 const temporaryDirectory = checkOnly ? mkdtempSync(join(tmpdir(), 'treasure-sdk-diagrams-')) : diagramsDirectory;
 
 function renderDiagram(name) {
   const source = join(diagramsDirectory, `${name}.mmd`);
   const destination = join(temporaryDirectory, `${name}.svg`);
-  const result = spawnSync(cliPath, ['-i', source, '-o', destination, '-b', 'transparent'], {
+  const result = spawnSync(cliPath, ['-i', source, '-o', destination, '-b', 'transparent', '-p', puppeteerConfigPath], {
     cwd: root,
     encoding: 'utf8',
   });
