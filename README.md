@@ -45,13 +45,13 @@ Treasure 是一个以插件扩展为核心的桌面应用平台。`treasure-sdk`
 | [treasure-plugins](https://github.com/Luzenrocy/treasure-plugins) | 插件集合 | 承载面向用户的具体功能与工具实现。 |
 | [Tauri v2](https://v2.tauri.app) | 桌面运行时 | 为 Treasure 宿主提供跨平台窗口、文件系统、系统对话框和 Rust 侧能力。 |
 
-![Treasure 生态架构图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.1.1/docs/diagrams/ecosystem.svg)
+![Treasure 生态架构图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.2.0/docs/diagrams/ecosystem.svg)
 
 ## 产品原型与功能逻辑
 
 从用户视角，Treasure 提供一个可安装、可切换的工具工作台：用户在宿主中打开插件，插件以独立页面呈现业务界面；需要数据或系统能力时，SDK 将请求交由宿主执行并返回结构化结果。
 
-![插件生命周期时序图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.1.1/docs/diagrams/plugin-lifecycle.svg)
+![插件生命周期时序图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.2.0/docs/diagrams/plugin-lifecycle.svg)
 
 ### 插件生命周期
 
@@ -66,7 +66,7 @@ Treasure 是一个以插件扩展为核心的桌面应用平台。`treasure-sdk`
 
 SDK 由“公开 API、宿主桥接、开发工具”构成。
 
-![Treasure SDK 技术架构图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.1.1/docs/diagrams/sdk-architecture.svg)
+![Treasure SDK 技术架构图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.2.0/docs/diagrams/sdk-architecture.svg)
 
 ### 受控宿主桥接
 
@@ -107,7 +107,7 @@ CLI 使用 `npx treasure-sdk create <plugin-code>` 按需下载并执行，不�
 
 数据访问的核心原则是：**插件发起意图，宿主决定是否执行**。SDK 不是权限最终裁决者，所有关键 SQL 规则都由宿主实施。
 
-![数据安全模型图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.1.1/docs/diagrams/data-security.svg)
+![数据安全模型图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v2.2.0/docs/diagrams/data-security.svg)
 
 - 插件查询、写入和事务必须显式声明使用到的 `tables`。
 - 宿主将裸表名重写为 `plugin_{pluginCode}_{table}`，实现插件间表空间隔离。

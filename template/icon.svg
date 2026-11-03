@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-label="Treasure plugin starter icon">
+  <defs>
+    <linearGradient id="starter-bg" x1="5" y1="4" x2="59" y2="61" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF7E9"/>
+      <stop offset=".5" stop-color="#F2EAF8"/>
+      <stop offset="1" stop-color="#E8F6EF"/>
+    </linearGradient>
+    <linearGradient id="starter-panel" x1="14" y1="14" x2="50" y2="53" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF8"/>
+      <stop offset="1" stop-color="#F3EDF7"/>
+    </linearGradient>
+    <linearGradient id="starter-gem" x1="24" y1="25" x2="41" y2="45" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7DB9A"/>
+      <stop offset=".48" stop-color="#C4A6F4"/>
+      <stop offset="1" stop-color="#7656A7"/>
+    </linearGradient>
+    <linearGradient id="starter-gem-light" x1="27" y1="27" x2="35" y2="39" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF8DA"/>
+      <stop offset="1" stop-color="#E7D5FF"/>
+    </linearGradient>
+    <filter id="starter-shadow" x="7" y="9" width="50" height="49" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#5A476B" flood-opacity=".16"/>
+    </filter>
+  </defs>
+
+  <rect x="1" y="1" width="62" height="62" rx="16" fill="url(#starter-bg)" stroke="#DECFE0" stroke-width="1.5"/>
+  <path d="M12 48.5c10.7 4.1 29.4 4.1 40 0" stroke="#705872" stroke-width="4" stroke-linecap="round" opacity=".08"/>
+  <g filter="url(#starter-shadow)">
+    <rect x="10" y="11" width="44" height="42" rx="11" fill="url(#starter-panel)" stroke="#655574" stroke-width="1.6"/>
+    <path d="M11.5 22h41" stroke="#D9C8DB" stroke-width="1.3"/>
+    <circle cx="17" cy="16.6" r="1.7" fill="#E8C98A"/>
+    <circle cx="22" cy="16.6" r="1.7" fill="#B69CFF"/>
+    <path d="M27.5 16.6H39" stroke="#C5B5C7" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+  <path d="M20.5 34H24M40 34h3.5M32 43v3.5" stroke="#B2987B" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="18.5" cy="34" r="2.35" fill="#F8E4B2" stroke="#A88455" stroke-width="1.1"/>
+  <circle cx="45.5" cy="34" r="2.35" fill="#DCCEFF" stroke="#8268AD" stroke-width="1.1"/>
+  <circle cx="32" cy="48.5" r="2.35" fill="#D5F0E1" stroke="#579573" stroke-width="1.1"/>
+  <path d="m32 24 10 10-10 10-10-10 10-10Z" fill="url(#starter-gem)" stroke="#60487A" stroke-width="1.45" stroke-linejoin="round"/>
+  <path d="m32 24 4.6 10L32 44l-4.6-10L32 24Z" fill="url(#starter-gem-light)" opacity=".9"/>
+  <path d="m22 34 10 1.8L42 34M32 24v11.8" stroke="#FFF8E6" stroke-width="1.15" stroke-linejoin="round" opacity=".78"/>
+  <circle cx="32" cy="34" r="2.3" fill="#FFF6D7" stroke="#AE8759" stroke-width="1"/>
+</svg>

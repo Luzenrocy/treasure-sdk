@@ -14,7 +14,7 @@ export function initTreasure(): TreasureClient {
   transport = new ProductionBridge();
   // Native dialogs are user-paced. They must remain pending until the user
   // explicitly confirms, cancels or closes the system window.
-  client = createClient((operation, payload) => transport!.call(operation, payload, operation === 'files.openDialog' || operation === 'files.saveDialog' ? 0 : undefined));
+  client = createClient((operation, payload) => transport!.call(operation, payload, operation === 'files.openDialog' || operation === 'files.saveDialog' ? 0 : undefined), transport);
   return client;
 }
 

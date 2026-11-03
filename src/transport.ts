@@ -1,7 +1,8 @@
 import { result, type Result } from './result';
+import type { MenuTransport } from './client';
 
 /** Internal bridge boundary. It is intentionally not exported from the SDK entrypoint. */
-export interface BridgeTransport {
+export interface BridgeTransport extends MenuTransport {
   call<T>(operation: string, payload?: unknown, timeoutMs?: number): Promise<Result<T>>;
   destroy?(): void;
 }

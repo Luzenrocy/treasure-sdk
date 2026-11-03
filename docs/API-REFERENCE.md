@@ -330,7 +330,7 @@ await logs.write({ level: 'info', category: 'export', message: 'export completed
 
 菜单注册和通知需在桌面宿主验证；日志应使用稳定英文类别和简短消息，`details` 保存可序列化上下文，不写用户文件绝对路径。
 
-当前 SDK 只公开菜单注册和注销，尚未公开类型化的菜单点击订阅或状态更新接口。宿主内部的 `treasure-menu-event` 不属于第三方稳定 API；需要交互菜单的插件应明确绑定宿主版本，并优先等待/推动 SDK 增加正式事件接口。
+SDK 公开菜单注册、更新、类型化点击订阅、取消订阅和注销。`menus.subscribe(menuId, listener)` 返回本地订阅句柄；事件只接受宿主桥接层验证后的 `menuId`/`itemId`，函数不会序列化到 `postMessage`。能力不可用时返回 `UNSUPPORTED`。
 
 ## 10. 运行环境与验证要求
 

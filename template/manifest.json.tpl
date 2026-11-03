@@ -6,10 +6,10 @@
   "author": "{{PLUGIN_AUTHOR}}",
   "icon": "icon.svg",
   "entry": "index.html",
-  "minPlatformVersion": "2.0.0",
+  "minPlatformVersion": "2.3.0",
   "menu": {
     "name": "{{PLUGIN_ALIAS}}",
-    "icon": "plugin",
+    "icon": "menu-icon.svg",
     "order": 100
   }
 }

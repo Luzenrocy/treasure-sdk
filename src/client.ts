@@ -57,13 +57,20 @@ export interface MenuRegistration {
   submenuLabel?: string;
   items: Array<MenuItem & { type?: 'normal' | 'check'; checked?: boolean }>;
 }
+export interface MenuClickEvent { menuId: string; itemId: string; pluginCode?: string }
+export interface MenuSubscription { token: string; unsubscribe: () => Result<void> }
+export type MenuListener = (event: MenuClickEvent) => void;
+export interface MenuTransport {
+  subscribe: (menuId: string, listener: MenuListener) => Result<MenuSubscription>;
+  unsubscribe: (token: string) => Result<void>;
+}
 
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error';
 
 /** Document rendering is performed in a host-owned isolated Webview. */
 
 /** Typed public SDK surface. Transport operation names are protocol internals. */
-export function createClient(transport: Transport) {
+export function createClient(transport: Transport, menuTransport?: MenuTransport) {
   return {
     files: {
       openDialog: (options: OpenDialogOptions) => transport<FileReference[] | DirectoryReference>('files.openDialog', options),
@@ -98,6 +105,9 @@ export function createClient(transport: Transport) {
     },
     menus: {
       register: (registration: MenuRegistration) => transport<void>('menus.register', registration),
+      update: (registration: MenuRegistration) => transport<void>('menus.update', registration),
+      subscribe: (menuId: string, listener: MenuListener): Result<MenuSubscription> => menuTransport?.subscribe(menuId, listener) ?? { ok: false, error: { code: 'UNSUPPORTED', message: '菜单订阅能力不可用' } },
+      unsubscribe: (token: string) => menuTransport?.unsubscribe(token) ?? { ok: false, error: { code: 'UNSUPPORTED', message: '菜单订阅能力不可用' } },
       unregister: (id: string) => transport<void>('menus.unregister', { id }),
     },
     notifications: {

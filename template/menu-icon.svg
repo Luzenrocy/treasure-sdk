@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Treasure plugin menu icon">
+  <!-- Uses currentColor so the host sidebar controls default, hover, and active states. -->
+  <rect x="11" y="9" width="42" height="46" rx="10" stroke="currentColor" stroke-width="3"/>
+  <path d="M12.5 21.5h39" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  <path d="M18.5 15.25h.1M24.5 15.25h.1" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="m32 25 9 9-9 9-9-9 9-9Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M17.5 34h5.5M41 34h5.5M32 43v6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="16" cy="34" r="2" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="48" cy="34" r="2" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="32" cy="50" r="2" stroke="currentColor" stroke-width="2.5"/>
+</svg>

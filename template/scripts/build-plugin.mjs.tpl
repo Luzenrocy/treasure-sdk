@@ -126,6 +126,23 @@ if (!packageManifest.plugin_uid) {
 }
 writeFileSync(join(outputDir, 'manifest.json'), JSON.stringify(packageManifest, null, 2));
 
+function copyManifestIcon(iconRef) {
+  if (typeof iconRef !== 'string') return;
+  const normalized = iconRef.trim().replace(/^\.\//, '');
+  if (!normalized || normalized.startsWith('/') || normalized.split('/').includes('..') || /^https?:\/\//i.test(normalized) || !/\.[a-z0-9]+$/i.test(normalized)) return;
+  const source = join(root, normalized);
+  if (!existsSync(source)) {
+    console.warn(`⚠️  图标文件不存在，跳过打包: ${normalized}`);
+    return;
+  }
+  const target = join(outputDir, normalized);
+  mkdirSync(dirname(target), { recursive: true });
+  cpSync(source, target);
+}
+
+copyManifestIcon(frozenManifest.icon);
+copyManifestIcon(frozenManifest.menu?.icon);
+
 const scriptsDir = join(root, 'scripts');
 if (existsSync(scriptsDir)) {
   cpSync(scriptsDir, join(outputDir, 'scripts'), { recursive: true });

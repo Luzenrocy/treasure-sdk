@@ -20,7 +20,7 @@
 | database | `database.query/execute/transaction` | 2.0.0 |
 | settings | `settings.get/set/list` | 2.0.0 |
 | permissions | `permissions.grantDirectory/verifyDirectoryGrant/revokeDirectory` | 2.0.0 |
-| menus | `menus.register/unregister` | 2.0.0 |
+| menus | `menus.register/update/subscribe/unsubscribe/unregister` | 2.1.0 (独立 capabilityVersion=1) |
 | notifications | `notifications.send` | 2.0.0 |
 | logs | `logs.write` | 2.0.0 |
 
@@ -43,6 +43,6 @@
 
 当前 `ProductionBridge` 的响应监听只检查消息类型和 `requestId`，尚未再次校验 `event.source` 与 `event.origin`；请求发送端的 `targetOrigin` 也仍为 `'*'`。宿主已对请求来源做身份和 origin 校验，但这不能替代 SDK 响应端校验。后续应在初始化时确定父窗口 origin，并为伪造响应补契约测试。
 
-宿主目前会以 `{ type: 'treasure-menu-event', menuId, itemId }` 向活动插件发送菜单点击，但 SDK 尚未公开对应的类型化事件订阅和状态更新 API。该反向消息是内部实现，不属于 2.0 面向第三方的稳定能力注册表。后续补齐时必须定义来源校验、订阅/销毁生命周期、菜单状态同步和兼容策略，并同步迁移内置插件。
+宿主以 `{ type: 'treasure-menu-event', menuId, itemId, pluginCode }` 向活动插件发送菜单点击。SDK 在本地维护 listener registry，postMessage 只传递 token 和事件字段，不传递函数。宿主校验 iframe source/origin、插件身份和订阅 token；能力不可用统一返回 `UNSUPPORTED`。
 
 目录授权验证失败必须返回结构化错误码；插件将其视为可重新选择目录的分支，不能依赖错误消息文本。
