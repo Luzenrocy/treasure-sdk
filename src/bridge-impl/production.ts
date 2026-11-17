@@ -107,6 +107,8 @@ export class ProductionBridge implements BridgeTransport, MenuTransport {
   subscribe(menuId: string, listener: MenuListener): Result<MenuSubscription> {
     const token = `menu_${++this.menuToken}`;
     this.menuListeners.set(token, { menuId, listener });
+    // Keep the original 2.x contract: registration is local and returns at once.
+    // Callers that need an acknowledgement can use subscribeConfirmed instead.
     void this.call('menus.subscribe', { menuId, token });
     return result.ok({ token, unsubscribe: () => this.unsubscribe(token) });
   }
@@ -114,6 +116,22 @@ export class ProductionBridge implements BridgeTransport, MenuTransport {
   unsubscribe(token: string): Result<void> {
     if (!this.menuListeners.delete(token)) return result.error('NOT_FOUND', '菜单订阅不存在');
     void this.call('menus.unsubscribe', { token });
+    return result.ok(undefined);
+  }
+
+  async subscribeConfirmed(menuId: string, listener: MenuListener): Promise<Result<MenuSubscription>> {
+    const token = `menu_${++this.menuToken}`;
+    const subscribed = await this.call<void>('menus.subscribe', { menuId, token });
+    if (!subscribed.ok) return subscribed;
+    this.menuListeners.set(token, { menuId, listener });
+    return result.ok({ token, unsubscribe: () => this.unsubscribe(token) });
+  }
+
+  async unsubscribeConfirmed(token: string): Promise<Result<void>> {
+    if (!this.menuListeners.has(token)) return result.error('NOT_FOUND', '菜单订阅不存在');
+    const unsubscribed = await this.call<void>('menus.unsubscribe', { token });
+    if (!unsubscribed.ok) return unsubscribed;
+    this.menuListeners.delete(token);
     return result.ok(undefined);
   }
 

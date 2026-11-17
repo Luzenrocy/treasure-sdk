@@ -130,25 +130,38 @@ describe('response forgery protection (已知契约缺口修复)', () => {
 });
 
 describe('menu listener registry', () => {
-  it('returns a local subscription token and rejects duplicate removal', () => {
-    const { parent } = installTestWindow();
-    parent.postMessage = () => undefined;
+  it('returns a confirmed subscription only after the host acknowledges it', async () => {
+    const { parent, emit } = installTestWindow();
+    const sent: CapturedMessage[] = [];
+    parent.postMessage = (message?: unknown) => { sent.push(message as CapturedMessage); return undefined; };
     const bridge = new ProductionBridge();
-    const subscription = bridge.subscribe('m', () => undefined);
+    const pending = bridge.subscribeConfirmed('m', () => undefined);
+    await Promise.resolve();
+    const subscribe = sent[0];
+    emit({ type: 'treasure-menu-response', requestId: subscribe.requestId, result: { ok: true, value: undefined } }, parent);
+    const subscription = await pending;
     expect(subscription.ok).toBe(true);
     if (subscription.ok) {
-      expect(subscription.value.unsubscribe()).toEqual(result.ok(undefined));
+      const pendingUnsubscribe = bridge.unsubscribeConfirmed(subscription.value.token);
+      await Promise.resolve();
+      const unsubscribe = sent[1];
+      emit({ type: 'treasure-menu-response', requestId: unsubscribe.requestId, result: { ok: true, value: undefined } }, parent);
+      await expect(pendingUnsubscribe).resolves.toEqual(result.ok(undefined));
       expect(subscription.value.unsubscribe()).toMatchObject({ ok: false, error: { code: 'NOT_FOUND' } });
     }
     bridge.destroy();
   });
 
-  it('forwards treasure-menu-event clicks to local listeners only from the parent', () => {
+  it('forwards treasure-menu-event clicks to confirmed local listeners only from the parent', async () => {
     const { parent, emit } = installTestWindow();
-    parent.postMessage = () => undefined;
+    const sent: CapturedMessage[] = [];
+    parent.postMessage = (message?: unknown) => { sent.push(message as CapturedMessage); return undefined; };
     const bridge = new ProductionBridge();
     const listener = vi.fn();
-    bridge.subscribe('shiyulu-view', listener);
+    const pending = bridge.subscribeConfirmed('shiyulu-view', listener);
+    await Promise.resolve();
+    emit({ type: 'treasure-menu-response', requestId: sent[0].requestId, result: { ok: true, value: undefined } }, parent);
+    await pending;
 
     emit({ type: 'treasure-menu-event', menuId: 'shiyulu-view', itemId: 'editOnly', pluginCode: 'shiyulu' }, parent);
     expect(listener).toHaveBeenCalledTimes(1);
@@ -157,6 +170,22 @@ describe('menu listener registry', () => {
     // 非父窗口来源的菜单事件被拒绝（与响应防伪一致）。
     emit({ type: 'treasure-menu-event', menuId: 'shiyulu-view', itemId: 'previewOnly', pluginCode: 'shiyulu' }, { postMessage: () => undefined });
     expect(listener).toHaveBeenCalledTimes(1);
+    bridge.destroy();
+  });
+
+  it('does not retain a listener when the host rejects its subscription', async () => {
+    const { parent, emit } = installTestWindow();
+    const sent: CapturedMessage[] = [];
+    parent.postMessage = (message?: unknown) => { sent.push(message as CapturedMessage); return undefined; };
+    const bridge = new ProductionBridge();
+    const listener = vi.fn();
+    const pending = bridge.subscribeConfirmed('shiyulu-view', listener);
+    await Promise.resolve();
+    emit({ type: 'treasure-menu-response', requestId: sent[0].requestId, result: { ok: false, error: { code: 'PERMISSION_DENIED', message: 'denied' } } }, parent);
+    await expect(pending).resolves.toMatchObject({ ok: false, error: { code: 'PERMISSION_DENIED' } });
+
+    emit({ type: 'treasure-menu-event', menuId: 'shiyulu-view', itemId: 'editOnly', pluginCode: 'shiyulu' }, parent);
+    expect(listener).not.toHaveBeenCalled();
     bridge.destroy();
   });
 });

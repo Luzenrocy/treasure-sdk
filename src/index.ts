@@ -39,6 +39,8 @@ export const menus = {
   updateChecked: (menuId: string, itemId: string, checked: boolean) => client().menus.updateChecked(menuId, itemId, checked),
   subscribe: (menuId: string, listener: import('./client').MenuListener) => client().menus.subscribe(menuId, listener),
   unsubscribe: (token: string) => client().menus.unsubscribe(token),
+  subscribeConfirmed: (menuId: string, listener: import('./client').MenuListener) => client().menus.subscribeConfirmed(menuId, listener),
+  unsubscribeConfirmed: (token: string) => client().menus.unsubscribeConfirmed(token),
   unregister: (id: string) => client().menus.unregister(id),
 };
 export const notifications = { send: (input: { title: string; body: string }) => client().notifications.send(input) };
