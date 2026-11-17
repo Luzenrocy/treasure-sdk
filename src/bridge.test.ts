@@ -142,7 +142,7 @@ describe('menu listener registry', () => {
     const subscription = await pending;
     expect(subscription.ok).toBe(true);
     if (subscription.ok) {
-      const pendingUnsubscribe = bridge.unsubscribeConfirmed(subscription.value.token);
+      const pendingUnsubscribe = subscription.value.unsubscribeConfirmed();
       await Promise.resolve();
       const unsubscribe = sent[1];
       emit({ type: 'treasure-menu-response', requestId: unsubscribe.requestId, result: { ok: true, value: undefined } }, parent);

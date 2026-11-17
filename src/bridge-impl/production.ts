@@ -1,6 +1,6 @@
 import { result, type Result } from '../result';
 import { normalizeResult, type BridgeTransport } from '../transport';
-import type { MenuListener, MenuSubscription, MenuTransport } from '../client';
+import type { ConfirmedMenuSubscription, MenuListener, MenuSubscription, MenuTransport } from '../client';
 
 /**
  * 能力域 → 请求消息类型映射（方案 B：按能力域拆分消息类型）。
@@ -119,12 +119,16 @@ export class ProductionBridge implements BridgeTransport, MenuTransport {
     return result.ok(undefined);
   }
 
-  async subscribeConfirmed(menuId: string, listener: MenuListener): Promise<Result<MenuSubscription>> {
+  async subscribeConfirmed(menuId: string, listener: MenuListener): Promise<Result<ConfirmedMenuSubscription>> {
     const token = `menu_${++this.menuToken}`;
     const subscribed = await this.call<void>('menus.subscribe', { menuId, token });
     if (!subscribed.ok) return subscribed;
     this.menuListeners.set(token, { menuId, listener });
-    return result.ok({ token, unsubscribe: () => this.unsubscribe(token) });
+    return result.ok({
+      token,
+      unsubscribe: () => this.unsubscribe(token),
+      unsubscribeConfirmed: () => this.unsubscribeConfirmed(token),
+    });
   }
 
   async unsubscribeConfirmed(token: string): Promise<Result<void>> {

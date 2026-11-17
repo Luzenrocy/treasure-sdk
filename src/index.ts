@@ -11,7 +11,7 @@ export { result } from './result';
 export type { Result, ResultErrorCode } from './result';
 export type { FileReference, DirectoryReference, OpenDialogOptions, SaveDialogOptions, WriteFileInput } from './files';
 export { createClient } from './client';
-export type { TreasureClient, SqlStatement, DirectoryEntry, Setting, PlainSetting, DirectorySetting, SetSettingInput, GrantDirectoryInput, DirectoryGrant, VerifyDirectoryGrantInput, MenuItem, MenuRegistration, MenuClickEvent, MenuSubscription, MenuListener, MenuTransport, LogLevel } from './client';
+export type { TreasureClient, SqlStatement, DirectoryEntry, Setting, PlainSetting, DirectorySetting, SetSettingInput, GrantDirectoryInput, DirectoryGrant, VerifyDirectoryGrantInput, MenuItem, MenuRegistration, MenuClickEvent, MenuSubscription, ConfirmedMenuSubscription, MenuListener, MenuTransport, LogLevel } from './client';
 import { getTreasure as client } from './bridge';
 
 /** Stable capability exports for code that prefers module-style imports. */
@@ -35,7 +35,6 @@ export const permissions = {
 };
 export const menus = {
   register: (registration: import('./client').MenuRegistration) => client().menus.register(registration),
-  update: (registration: import('./client').MenuRegistration) => client().menus.update(registration),
   updateChecked: (menuId: string, itemId: string, checked: boolean) => client().menus.updateChecked(menuId, itemId, checked),
   subscribe: (menuId: string, listener: import('./client').MenuListener) => client().menus.subscribe(menuId, listener),
   unsubscribe: (token: string) => client().menus.unsubscribe(token),

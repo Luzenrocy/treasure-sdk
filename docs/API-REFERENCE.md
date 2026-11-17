@@ -333,16 +333,16 @@ if (subscription.ok) subscription.value.unsubscribe();
 
 // 只有必须依赖宿主确认时才使用此增量 API。
 const confirmed = await menus.subscribeConfirmed('my-plugin.file', () => {});
-if (confirmed.ok) await menus.unsubscribeConfirmed(confirmed.value.token);
+if (confirmed.ok) await confirmed.value.unsubscribeConfirmed();
 await notifications.send({ title: '导出完成', body: 'report.pdf 已保存' });
 await logs.write({ level: 'info', category: 'export', message: 'export completed', details: { bytes: 1024 } });
 ```
 
 菜单注册和通知需在桌面宿主验证；日志应使用稳定英文类别和简短消息，`details` 保存可序列化上下文，不写用户文件绝对路径。
 
-SDK 公开菜单注册、更新、注销，并通过类型化订阅接收宿主菜单点击。为保持 2.x 兼容，`menus.subscribe(menuId, listener)` 与 `unsubscribe()` 返回本地结果并异步通知宿主；需要宿主回执时使用新增的 `menus.subscribeConfirmed()` 与 `menus.unsubscribeConfirmed()`。事件只接受宿主桥接层验证后的 `menuId`/`itemId`，函数不会序列化到 `postMessage`。能力不可用时返回 `UNSUPPORTED`。
+SDK 公开菜单注册、注销，并通过类型化订阅接收宿主菜单点击。`menus.subscribe(menuId, listener)` 与句柄的 `unsubscribe()` 返回本地结果并异步通知宿主；需要宿主回执时使用 `menus.subscribeConfirmed()`，并调用其返回句柄的 `unsubscribeConfirmed()`。保留 `menus.unsubscribeConfirmed(token)` 以便仅持有 token 的调用方使用。事件只接受宿主桥接层验证后的 `menuId`/`itemId`，函数不会序列化到 `postMessage`。能力不可用时返回 `UNSUPPORTED`。
 
-`menus.register` 与 `menus.update` 语义一致（重复注册同一 `menuId` 即覆盖更新）；动态勾选同步请优先使用轻量路径 `menus.updateChecked(menuId, itemId, checked)`，只更新单个菜单项勾选状态，不触发整窗菜单重建。宿主要求注册 `rootLabel` 为已知系统菜单名（View/File/Edit/Window/Help 或本地化别名）且 items 条目 id/label/type 合法，非法注册返回 `VALIDATION_FAILED`。
+重复调用 `menus.register` 并传入同一 `menuId` 会覆盖更新；`menus.update` 已移除。动态勾选同步请优先使用轻量路径 `menus.updateChecked(menuId, itemId, checked)`，只更新单个菜单项勾选状态，不触发整窗菜单重建。宿主要求注册 `rootLabel` 为已知系统菜单名（View/File/Edit/Window/Help 或本地化别名）且 items 条目 id/label/type 合法，非法注册返回 `VALIDATION_FAILED`。
 
 ## 10. 运行环境与验证要求
 

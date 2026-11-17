@@ -61,12 +61,17 @@ export interface MenuRegistration {
 export interface MenuClickEvent { menuId: string; itemId: string; pluginCode?: string }
 /** A local subscription handle. `subscribe` remains synchronous for 2.x compatibility. */
 export interface MenuSubscription { token: string; unsubscribe: () => Result<void> }
+/** A subscription created after the host acknowledged it. */
+export interface ConfirmedMenuSubscription extends MenuSubscription {
+  /** Waits for the host to acknowledge removal before dropping the local listener. */
+  unsubscribeConfirmed: () => Promise<Result<void>>;
+}
 export type MenuListener = (event: MenuClickEvent) => void;
 export interface MenuTransport {
   subscribe: (menuId: string, listener: MenuListener) => Result<MenuSubscription>;
   unsubscribe: (token: string) => Result<void>;
   /** Optional additive API for callers that require a host acknowledgement. */
-  subscribeConfirmed?: (menuId: string, listener: MenuListener) => Promise<Result<MenuSubscription>>;
+  subscribeConfirmed?: (menuId: string, listener: MenuListener) => Promise<Result<ConfirmedMenuSubscription>>;
   unsubscribeConfirmed?: (token: string) => Promise<Result<void>>;
 }
 
@@ -110,8 +115,6 @@ export function createClient(transport: Transport, menuTransport?: MenuTransport
     },
     menus: {
       register: (registration: MenuRegistration) => transport<void>('menus.register', registration),
-      /** 与 register 语义一致（重复注册同一 menuId 即覆盖更新），保留为兼容别名。 */
-      update: (registration: MenuRegistration) => transport<void>('menus.update', registration),
       /**
        * 轻量路径：只更新指定菜单项的勾选状态，不触发整窗菜单重建。
        * 优先于"重新 register 全量菜单"用于动态勾选同步。
@@ -119,7 +122,7 @@ export function createClient(transport: Transport, menuTransport?: MenuTransport
       updateChecked: (menuId: string, itemId: string, checked: boolean) => transport<void>('menus.updateChecked', { menuId, itemId, checked }),
       subscribe: (menuId: string, listener: MenuListener): Result<MenuSubscription> => menuTransport?.subscribe(menuId, listener) ?? { ok: false, error: { code: 'UNSUPPORTED', message: '菜单订阅能力不可用' } },
       unsubscribe: (token: string): Result<void> => menuTransport?.unsubscribe(token) ?? { ok: false, error: { code: 'UNSUPPORTED', message: '菜单订阅能力不可用' } },
-      subscribeConfirmed: (menuId: string, listener: MenuListener): Promise<Result<MenuSubscription>> => menuTransport?.subscribeConfirmed?.(menuId, listener) ?? Promise.resolve({ ok: false, error: { code: 'UNSUPPORTED', message: '菜单确认订阅能力不可用' } }),
+      subscribeConfirmed: (menuId: string, listener: MenuListener): Promise<Result<ConfirmedMenuSubscription>> => menuTransport?.subscribeConfirmed?.(menuId, listener) ?? Promise.resolve({ ok: false, error: { code: 'UNSUPPORTED', message: '菜单确认订阅能力不可用' } }),
       unsubscribeConfirmed: (token: string): Promise<Result<void>> => menuTransport?.unsubscribeConfirmed?.(token) ?? Promise.resolve({ ok: false, error: { code: 'UNSUPPORTED', message: '菜单确认取消订阅能力不可用' } }),
       unregister: (id: string) => transport<void>('menus.unregister', { id }),
     },

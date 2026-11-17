@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.0
+
+- 移除重复的 `menus.update`。使用同一 `menuId` 再次调用 `menus.register` 即可覆盖菜单声明；动态勾选状态继续使用 `menus.updateChecked`。
+- `menus.subscribeConfirmed()` 返回 `ConfirmedMenuSubscription`，其 `unsubscribeConfirmed()` 会等待宿主确认后再移除本地监听器。
+- 修正文档中的菜单订阅生命周期说明。
+
 ## 2.3.0
 
 ### Changed

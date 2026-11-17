@@ -34,13 +34,13 @@
 | database | `database.query/execute/transaction` | 2.4.0 |
 | settings | `settings.get/set/list` | 2.4.0 |
 | permissions | `permissions.grantDirectory/verifyDirectoryGrant/revokeDirectory` | 2.4.0 |
-| menus | `menus.register/update/subscribe/unsubscribe/unregister/updateChecked` | 2.4.0 (独立 capabilityVersion=1) |
+| menus | `menus.register/updateChecked/subscribe/unsubscribe/subscribeConfirmed/unsubscribeConfirmed/unregister` | 2.4.0 (独立 capabilityVersion=2) |
 | notifications | `notifications.send` | 2.4.0 |
 | logs | `logs.write` | 2.4.0 |
 
 宿主先验证请求 type 与 operation 的能力域一致性，再校验 operation 对应的请求 schema，随后以解析到的身份进行文件授权、存储、设置、菜单和数据库命名空间裁决。未登记 type、未登记 operation 或 type 与 operation 能力域不一致时返回 `VALIDATION_FAILED` 或不响应。
 
-`menus.register` 与 `menus.update` 语义一致：重复注册同一 `menuId` 即等价于更新（宿主内部走同一条注册路径并重建窗口菜单）。`menus.update` 仅作为兼容别名保留。动态勾选状态同步应优先使用 `menus.updateChecked(menuId, itemId, checked)` 轻量路径：宿主只更新缓存句柄的勾选状态，不触发整窗菜单重建，也避免重复提交全量 items。菜单注册请求会校验 `rootLabel` 必须属于宿主已知系统菜单名（如 View/File/Edit/Window/Help 及其本地化别名）且 items 条目的 id/label/type 合法。
+重复 `menus.register` 同一 `menuId` 即覆盖更新（宿主内部走同一条注册路径并重建窗口菜单）；`menus.update` 已移除。动态勾选状态同步应优先使用 `menus.updateChecked(menuId, itemId, checked)` 轻量路径：宿主只更新缓存句柄的勾选状态，不触发整窗菜单重建，也避免重复提交全量 items。菜单注册请求会校验 `rootLabel` 必须属于宿主已知系统菜单名（如 View/File/Edit/Window/Help 及其本地化别名）且 items 条目的 id/label/type 合法。
 
 ## 安全边界
 
