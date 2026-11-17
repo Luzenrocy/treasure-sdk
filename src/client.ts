@@ -55,7 +55,8 @@ export interface MenuRegistration {
   menuId: string;
   rootLabel: string;
   submenuLabel?: string;
-  items: Array<MenuItem & { type?: 'normal' | 'check'; checked?: boolean }>;
+  /** type: 'check' 为带勾选框菜单项，'normal' 为普通项，'separator' 为分隔线（宿主均支持）。 */
+  items: Array<MenuItem & { type?: 'normal' | 'check' | 'separator'; checked?: boolean }>;
 }
 export interface MenuClickEvent { menuId: string; itemId: string; pluginCode?: string }
 export interface MenuSubscription { token: string; unsubscribe: () => Result<void> }
@@ -105,7 +106,13 @@ export function createClient(transport: Transport, menuTransport?: MenuTransport
     },
     menus: {
       register: (registration: MenuRegistration) => transport<void>('menus.register', registration),
+      /** 与 register 语义一致（重复注册同一 menuId 即覆盖更新），保留为兼容别名。 */
       update: (registration: MenuRegistration) => transport<void>('menus.update', registration),
+      /**
+       * 轻量路径：只更新指定菜单项的勾选状态，不触发整窗菜单重建。
+       * 优先于"重新 register 全量菜单"用于动态勾选同步。
+       */
+      updateChecked: (menuId: string, itemId: string, checked: boolean) => transport<void>('menus.updateChecked', { menuId, itemId, checked }),
       subscribe: (menuId: string, listener: MenuListener): Result<MenuSubscription> => menuTransport?.subscribe(menuId, listener) ?? { ok: false, error: { code: 'UNSUPPORTED', message: '菜单订阅能力不可用' } },
       unsubscribe: (token: string) => menuTransport?.unsubscribe(token) ?? { ok: false, error: { code: 'UNSUPPORTED', message: '菜单订阅能力不可用' } },
       unregister: (id: string) => transport<void>('menus.unregister', { id }),

@@ -2,9 +2,53 @@ import { result, type Result } from '../result';
 import { normalizeResult, type BridgeTransport } from '../transport';
 import type { MenuListener, MenuSubscription, MenuTransport } from '../client';
 
+/**
+ * 能力域 → 请求消息类型映射（方案 B：按能力域拆分消息类型）。
+ *
+ * 与宿主 `treasure/src/bridge/pluginBridge.ts` 中的映射保持一致：
+ * 插件请求发送到 `treasure-{domain}-request` 信封，宿主按 type 分发，
+ * 并以 `treasure-{domain}-response` 响应。`database` 域沿用历史名称
+ * `treasure-db-request/-response`。
+ */
+export const REQUEST_TYPE_BY_CAPABILITY: Record<string, string> = {
+  files: 'treasure-file-request',
+  directories: 'treasure-directory-request',
+  storage: 'treasure-storage-request',
+  database: 'treasure-db-request',
+  settings: 'treasure-setting-request',
+  permissions: 'treasure-permission-request',
+  menus: 'treasure-menu-request',
+  notifications: 'treasure-notification-request',
+  logs: 'treasure-log-request',
+};
+
+const REQUEST_TYPES = new Set(Object.values(REQUEST_TYPE_BY_CAPABILITY));
+
+/** 请求类型 → 对应响应类型，如 `treasure-menu-request` → `treasure-menu-response`。 */
+export function responseTypeForRequest(requestType: string): string {
+  return requestType.replace(/-request$/, '-response');
+}
+
+function requestTypeForOperation(operation: string): string {
+  const domain = operation.split('.')[0];
+  return REQUEST_TYPE_BY_CAPABILITY[domain] ?? 'treasure-db-request';
+}
+
+/** 解析父窗口 origin；解析失败（如 plugin:// 自定义协议）时返回 null。 */
+function resolveParentOrigin(): string | null {
+  try {
+    const referrer = document.referrer;
+    if (!referrer) return null;
+    return new URL(referrer).origin;
+  } catch {
+    return null;
+  }
+}
+
 interface PendingRequest {
   resolve: (value: unknown) => void;
   timer?: ReturnType<typeof setTimeout>;
+  responseType: string;
 }
 
 /** Production transport. Plugin identity is derived by the host from MessageEvent.source. */
@@ -13,8 +57,12 @@ export class ProductionBridge implements BridgeTransport, MenuTransport {
   private pending = new Map<string, PendingRequest>();
   private menuListeners = new Map<string, { menuId: string; listener: MenuListener }>();
   private menuToken = 0;
+  private readonly parentOrigin: string | null;
 
   constructor() {
+    // 已知缺口修复：初始化时确定父窗口 origin；无法解析时回退 '*'，
+    // 交由 handleResponse/handleMenuEvent 的 `event.source === window.parent` 校验兜底。
+    this.parentOrigin = resolveParentOrigin();
     window.addEventListener('message', this.handleResponse);
     window.addEventListener('message', this.handleMenuEvent);
   }
@@ -32,9 +80,14 @@ export class ProductionBridge implements BridgeTransport, MenuTransport {
 
   private handleResponse = (event: MessageEvent) => {
     const data = event.data;
-    if (data?.type !== 'treasure-db-response') return;
+    if (event.source !== window.parent) return;
+    // 已知缺口修复（origin 二次校验）：能解析父窗口 origin 时，拒绝非父 origin 的伪造响应。
+    if (this.parentOrigin && event.origin !== this.parentOrigin) return;
+    if (!data || typeof data.type !== 'string' || !data.type.endsWith('-response')) return;
     const pending = this.pending.get(data.requestId);
     if (!pending) return;
+    // 只有与请求能力域匹配的响应类型才会被消费，避免跨域响应错配。
+    if (data.type !== pending.responseType) return;
     clearTimeout(pending.timer);
     this.pending.delete(data.requestId);
     pending.resolve(data.result ?? data);
@@ -43,6 +96,8 @@ export class ProductionBridge implements BridgeTransport, MenuTransport {
   private handleMenuEvent = (event: MessageEvent) => {
     const data = event.data;
     if (data?.type !== 'treasure-menu-event' || event.source !== window.parent) return;
+    // 已知缺口修复（origin 二次校验）：能解析父窗口 origin 时，拒绝非父 origin 的伪造菜单事件。
+    if (this.parentOrigin && event.origin !== this.parentOrigin) return;
     if (typeof data.menuId !== 'string' || typeof data.itemId !== 'string') return;
     for (const entry of this.menuListeners.values()) {
       if (entry.menuId === data.menuId) entry.listener({ menuId: data.menuId, itemId: data.itemId, pluginCode: data.pluginCode });
@@ -65,7 +120,9 @@ export class ProductionBridge implements BridgeTransport, MenuTransport {
   private send(operation: string, payload?: unknown, timeoutMs = 10_000): Promise<unknown> {
     return new Promise((resolve) => {
       const requestId = `req_${++this.requestId}`;
-      const pending: PendingRequest = { resolve };
+      const requestType = requestTypeForOperation(operation);
+      const responseType = responseTypeForRequest(requestType);
+      const pending: PendingRequest = { resolve, responseType };
       if (timeoutMs > 0) {
         pending.timer = setTimeout(() => {
           this.pending.delete(requestId);
@@ -73,7 +130,8 @@ export class ProductionBridge implements BridgeTransport, MenuTransport {
         }, timeoutMs);
       }
       this.pending.set(requestId, pending);
-      window.parent.postMessage({ type: 'treasure-db-request', requestId, operation, payload }, '*');
+      // 已知缺口修复：targetOrigin 优先使用解析到的父窗口 origin，失败回退 '*'。
+      window.parent.postMessage({ type: requestType, requestId, operation, payload }, this.parentOrigin ?? '*');
     });
   }
 
@@ -84,4 +142,9 @@ export class ProductionBridge implements BridgeTransport, MenuTransport {
       return result.error('IO_ERROR', error instanceof Error ? error.message : '桥接通信失败');
     }
   }
+}
+
+/** 供契约测试与工具使用：判断某消息类型是否属于已知的能力域请求信封。 */
+export function isKnownRequestType(type: unknown): type is string {
+  return typeof type === 'string' && REQUEST_TYPES.has(type);
 }

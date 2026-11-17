@@ -36,6 +36,7 @@ export const permissions = {
 export const menus = {
   register: (registration: import('./client').MenuRegistration) => client().menus.register(registration),
   update: (registration: import('./client').MenuRegistration) => client().menus.update(registration),
+  updateChecked: (menuId: string, itemId: string, checked: boolean) => client().menus.updateChecked(menuId, itemId, checked),
   subscribe: (menuId: string, listener: import('./client').MenuListener) => client().menus.subscribe(menuId, listener),
   unsubscribe: (token: string) => client().menus.unsubscribe(token),
   unregister: (id: string) => client().menus.unregister(id),

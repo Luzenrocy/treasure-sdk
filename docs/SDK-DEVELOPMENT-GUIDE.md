@@ -85,7 +85,7 @@ npm run build     # 构建 ESM、CJS、类型声明与 CLI
 
 ### 3.6 文档和实现必须同源
 
-每个稳定 API 必须同时在 `src/index.ts` 公开导出、在 `src/client.ts` 定义类型、在宿主能力注册表与处理器中实现，并同步 API 参考和插件模板。`ProductionBridge` 是通用 operation 传输层；只有消息信封、响应校验、超时或生命周期发生变化时才需要修改。文档必须写明：
+每个稳定 API 必须同时在 `src/index.ts` 公开导出、在 `src/client.ts` 定义类型、在宿主能力注册表与处理器中实现，并同步 API 参考和插件模板。`ProductionBridge` 是通用 operation 传输层：插件请求按能力域选择对应的消息信封（如 `menus.*` 走 `treasure-menu-request`/`treasure-menu-response`，`files.*` 走 `treasure-file-request`/`treasure-file-response`），响应监听只消费与请求能力域匹配的响应类型，并校验 `event.source === window.parent`。只有消息信封、响应校验、超时或生命周期发生变化时才需要修改桥接实现。文档必须写明：
 
 - 方法签名、成功值、取消/失败结果、限制与最低宿主版本；
 - 是否持久化授权、引用能否跨会话使用、是否允许隐藏文件；
@@ -101,11 +101,12 @@ npm run build     # 构建 ESM、CJS、类型声明与 CLI
 4. 从 `src/index.ts` 只导出稳定模块、类型与 `Result<T>`；同步 [API 参考](API-REFERENCE.md)、桥接协议和模板。
 5. 执行测试、覆盖率、类型检查与构建；原生文件选择、持久化授权、回收站、通知及安装升级卸载列入人工 E2E。
 
-宿主到插件的反向事件也必须经过同样的公共契约链路。当前菜单点击仍通过内部 `treasure-menu-event` 分发；在提供 SDK 类型化订阅、来源验证和销毁语义之前，不应把该消息写成第三方可依赖 API。
+宿主到插件的反向事件也必须经过同样的公共契约链路。菜单点击事件（`treasure-menu-event`）由宿主经 `menus.subscribe` 的本地 listener registry 分发；插件一律通过 SDK 类型化订阅接收，不得自行监听 `window` 消息或内部事件名。
 
 ### 4.1 兼容性与演进原则
 
 - 2.0 已完成一次不兼容升级；2.x 内不得重新引入旧 `file`、裸路径或自由 action API。
+- 2.3.0 起桥接消息信封按能力域拆分（方案 B）；所有新能力按能力域选择 `treasure-{domain}-request`/`treasure-{domain}-response`，新增能力域必须同步宿主分发表与 `src/bridge-impl/production.ts` 的 `REQUEST_TYPE_BY_CAPABILITY`。
 - SDK 不绕过宿主裁决：SQL、文件、对话框、菜单等真实权限由 Treasure 宿主决定。
 - 每个新能力必须声明最低宿主版本、schema、错误码和人工 E2E 责任。
 - 公开接口的新增、重命名或移除必须先盘点全部内置插件、模板和文档。仅因接口数量多而删除，或迫使插件改用内部 action，均不符合 SDK 边界。

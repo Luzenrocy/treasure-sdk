@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createClient, type MenuSubscription } from './client';
 
 describe('public menu capability', () => {
-  it('exposes register, update, subscribe and unsubscribe without serializing listeners', async () => {
+  it('exposes register, update, updateChecked, subscribe and unsubscribe without serializing listeners', async () => {
     const calls: Array<[string, unknown]> = [];
     const transport = Object.assign(vi.fn(async <T>(_operation: string, payload?: unknown) => { calls.push([_operation, payload]); return { ok: true as const, value: undefined as T }; }), {
       subscribe: vi.fn((_menuId: string, _listener: (event: unknown) => void) => ({
@@ -14,6 +14,9 @@ describe('public menu capability', () => {
     const client = createClient(transport as any, transport as any);
     await expect(client.menus.register({ menuId: 'm', rootLabel: 'File', items: [] })).resolves.toMatchObject({ ok: true });
     await expect(client.menus.update({ menuId: 'm', rootLabel: 'File', items: [] })).resolves.toMatchObject({ ok: true });
+    // 轻量勾选更新走 menus.updateChecked operation（建议 3）
+    await expect(client.menus.updateChecked('m', 'item-a', true)).resolves.toMatchObject({ ok: true });
+    expect(calls).toContainEqual(['menus.updateChecked', { menuId: 'm', itemId: 'item-a', checked: true }]);
     const listener = vi.fn();
     const subscription = client.menus.subscribe('m', listener);
     expect(subscription.ok).toBe(true);

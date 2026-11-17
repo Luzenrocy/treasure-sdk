@@ -1,6 +1,6 @@
 # Treasure SDK 2.0 API 参考
 
-> 面向插件作者。本文的公开 API 以 `treasure-sdk/src/index.ts` 导出和类型声明为准；插件不得直接调用 Tauri API、Treasure 内部模块或桥接 operation。最低宿主版本：**2.0.0**。
+> 面向插件作者。本文的公开 API 以 `treasure-sdk/src/index.ts` 导出和类型声明为准；插件不得直接调用 Tauri API、Treasure 内部模块或桥接 operation。最低宿主版本：**2.4.0**（SDK 2.3.0 起按能力域拆分桥接消息类型，需配套宿主 2.4.0+；旧版本宿主请查阅 [桥接协议](BRIDGE-PROTOCOL.md) 的兼容性说明）。
 
 ```ts
 import {
@@ -324,13 +324,17 @@ await menus.register({
   items: [{ id: 'create', label: '新建' }],
 });
 await menus.unregister('my-plugin.file');
+// 动态勾选同步使用轻量路径，避免整窗菜单重建
+await menus.updateChecked('my-plugin.file', 'create', true);
 await notifications.send({ title: '导出完成', body: 'report.pdf 已保存' });
 await logs.write({ level: 'info', category: 'export', message: 'export completed', details: { bytes: 1024 } });
 ```
 
 菜单注册和通知需在桌面宿主验证；日志应使用稳定英文类别和简短消息，`details` 保存可序列化上下文，不写用户文件绝对路径。
 
-SDK 公开菜单注册、更新、类型化点击订阅、取消订阅和注销。`menus.subscribe(menuId, listener)` 返回本地订阅句柄；事件只接受宿主桥接层验证后的 `menuId`/`itemId`，函数不会序列化到 `postMessage`。能力不可用时返回 `UNSUPPORTED`。
+SDK 公开菜单注册、更新、注销，并通过类型化订阅接收宿主菜单点击。`menus.subscribe(menuId, listener)` 返回本地订阅句柄；事件只接受宿主桥接层验证后的 `menuId`/`itemId`，函数不会序列化到 `postMessage`。能力不可用时返回 `UNSUPPORTED`。
+
+`menus.register` 与 `menus.update` 语义一致（重复注册同一 `menuId` 即覆盖更新）；动态勾选同步请优先使用轻量路径 `menus.updateChecked(menuId, itemId, checked)`，只更新单个菜单项勾选状态，不触发整窗菜单重建。宿主要求注册 `rootLabel` 为已知系统菜单名（View/File/Edit/Window/Help 或本地化别名）且 items 条目 id/label/type 合法，非法注册返回 `VALIDATION_FAILED`。
 
 ## 10. 运行环境与验证要求
 
