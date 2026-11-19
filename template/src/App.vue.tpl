@@ -9,7 +9,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { files } from 'treasure-sdk';
+import { files } from '@luzenrocy/treasure-sdk';
 
 export default defineComponent({
   name: 'App',

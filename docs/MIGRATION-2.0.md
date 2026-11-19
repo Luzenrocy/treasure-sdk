@@ -1,6 +1,6 @@
-# SDK 2.0 迁移指南
+# 历史 SDK 迁移指南
 
-SDK 2.0 不兼容 1.x 的旧接口。旧插件需要先完成下表中的替换，再将最低宿主版本设为 `2.0.0`。
+这份文档保留旧 SDK 的接口迁移记录。新的 `1.0.0` 发布基线不承诺与已停用 npmjs 版本兼容；旧插件需要完成下表中的替换，并将最低宿主版本设为 `1.0.0`。
 
 ## 1. 接口替换清单
 
@@ -18,7 +18,7 @@ SDK 2.0 不兼容 1.x 的旧接口。旧插件需要先完成下表中的替换�
 在应用挂载前调用一次 `initTreasure()`，随后只使用 `files`、`directories`、`storage`、`database`、`settings`、`permissions`、`menus`、`notifications` 和 `logs`。
 
 ```ts
-import { initTreasure, files } from 'treasure-sdk';
+import { initTreasure, files } from '@luzenrocy/treasure-sdk';
 
 initTreasure();
 

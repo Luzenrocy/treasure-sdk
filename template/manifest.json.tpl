@@ -6,7 +6,7 @@
   "author": "{{PLUGIN_AUTHOR}}",
   "icon": "icon.svg",
   "entry": "index.html",
-  "minPlatformVersion": "2.4.0",
+  "minPlatformVersion": "1.0.0",
   "menu": {
     "name": "{{PLUGIN_ALIAS}}",
     "icon": "menu-icon.svg",

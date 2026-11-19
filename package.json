@@ -1,11 +1,15 @@
 {
-  "name": "treasure-sdk",
-  "version": "3.0.0",
+  "name": "@luzenrocy/treasure-sdk",
+  "version": "1.0.0",
   "type": "module",
   "description": "Treasure 插件 SDK — 插件与宿主通信的统一接口",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Luzenrocy/treasure-sdk.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -37,7 +41,7 @@
     "docs:diagrams:check": "node scripts/generate-readme-diagrams.mjs --check",
     "version": "npm run docs:diagrams && git add README.md docs/diagrams",
     "pack:check": "npm pack --dry-run",
-    "prepublishOnly": "npm run docs:diagrams:check && npm run build"
+    "prepack": "npm run docs:diagrams:check && npm run build"
   },
   "dependencies": {
     "commander": "^12.1.0",

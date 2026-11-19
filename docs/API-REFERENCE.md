@@ -1,12 +1,12 @@
-# Treasure SDK 2.0 API 参考
+# Treasure SDK 1.0 API 参考
 
-> 面向插件作者。本文的公开 API 以 `treasure-sdk/src/index.ts` 导出和类型声明为准；插件不得直接调用 Tauri API、Treasure 内部模块或桥接 operation。最低宿主版本：**2.4.0**（SDK 2.3.0 起按能力域拆分桥接消息类型，需配套宿主 2.4.0+；旧版本宿主请查阅 [桥接协议](BRIDGE-PROTOCOL.md) 的兼容性说明）。
+> 面向插件作者。本文的公开 API 以 `treasure-sdk/src/index.ts` 导出和类型声明为准；插件不得直接调用 Tauri API、Treasure 内部模块或桥接 operation。最低宿主版本：**1.0.0**。SDK `1.0.0` 是新的发布基线，不与已停用的 npmjs 版本建立兼容承诺。
 
 ```ts
 import {
   initTreasure, files, directories, storage, database, settings, permissions,
   menus, notifications, logs,
-} from 'treasure-sdk';
+} from '@luzenrocy/treasure-sdk';
 
 initTreasure(); // 在挂载应用前调用一次
 ```
@@ -354,6 +354,6 @@ SDK 只在 Treasure 桌面宿主创建的插件 iframe 中运行。插件的 `np
 
 目录授权验证失败时，插件应将其视为“重新选择目录”的可恢复分支，不要依赖错误消息文本。
 
-## 11. SDK 2.0 不兼容接口变更
+## 11. 1.0.0 基线与旧 SDK 的不兼容性
 
 移除的是旧 `file`/`setting` 模块、`Response`/`TreasureResponse`、`request(action, payload)`、裸路径与 Base64 文件读写、`readBinaryFile`、`writeBinaryFile`、`createFile`、`updateFile`、`createDir`、`mkdir`、`deleteDir`、`selectDirectory` 等旧接口。旧插件迁移另见 [MIGRATION-2.0.md](MIGRATION-2.0.md)。

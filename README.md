@@ -1,10 +1,19 @@
 # Treasure SDK
 
-[![npm](https://img.shields.io/npm/v/treasure-sdk?logo=npm&label=npm)](https://www.npmjs.com/package/treasure-sdk)
+[![GitHub Release](https://img.shields.io/github/v/release/Luzenrocy/treasure-sdk?label=release)](https://github.com/Luzenrocy/treasure-sdk/releases)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-**Treasure 插件 SDK** 是 [Treasure](https://github.com/Luzenrocy/treasure) 的官方插件开发工具包。它将插件与桌面宿主之间的交互收敛为稳定、类型化的 JavaScript API，并作为独立 npm 包发布：[`treasure-sdk`](https://www.npmjs.com/package/treasure-sdk)。
+**Treasure 插件 SDK** 是 [Treasure](https://github.com/Luzenrocy/treasure) 的官方插件开发工具包。它将插件与桌面宿主之间的交互收敛为稳定、类型化的 JavaScript API。SDK 以 GitHub Packages 的公开 npm 包 `@luzenrocy/treasure-sdk` 发布，并同步 tarball 到 Gitee Release；不再发布到 npmjs。
+
+安装前需使用具备 `read:packages` 权限的 GitHub classic PAT 登录 GitHub Packages：
+
+```bash
+npm login --scope=@luzenrocy --auth-type=legacy --registry=https://npm.pkg.github.com
+npm install @luzenrocy/treasure-sdk@1.0.0
+```
+
+公开状态使包在 GitHub 上可见，但 GitHub 的 npm registry 仍要求安装者认证。
 
 Treasure 在研发中将插件/工具与主程序解耦：一方面降低系统安装和运行时集成成本；另一方面将数据访问、安全校验和系统能力统一留在宿主侧控制。插件只需面向 SDK 编程，即可在受控边界内使用数据、文件、系统设置、系统对话框与原生菜单能力。开发服务可独立启动，但插件页面需由 Treasure 加载后才能使用这些能力。
 
@@ -31,7 +40,7 @@ Treasure 是一个以插件扩展为核心的桌面应用平台。`treasure-sdk`
 
 | 目标 | SDK 的解决方式 |
 | --- | --- |
-| 降低插件开发门槛 | 以 npm 包提供统一 API、TypeScript 类型、Vue 插件模板与 CLI 脚手架。 |
+| 降低插件开发门槛 | 以 GitHub Packages 的 npm 包提供统一 API、TypeScript 类型、Vue 插件模板与 CLI 脚手架。 |
 | 保持单一运行边界 | 插件页面始终由 Treasure 桌面宿主 iframe 承载；SDK 只通过宿主桥接执行能力。 |
 | 保护平台与插件数据 | SQL 在宿主侧验证、重写与执行；插件只能访问自身命名空间的数据表和系统设置项。 |
 | 保持系统能力的统一调用边界 | 插件只依赖 SDK 公开接口，不直接依赖 Treasure 内部模块或 Tauri API；Treasure 宿主负责将 SDK 请求映射到前端服务、Rust/Tauri 命令及相关 Tauri 插件。 |
@@ -45,13 +54,13 @@ Treasure 是一个以插件扩展为核心的桌面应用平台。`treasure-sdk`
 | [treasure-plugins](https://github.com/Luzenrocy/treasure-plugins) | 插件集合 | 承载面向用户的具体功能与工具实现。 |
 | [Tauri v2](https://v2.tauri.app) | 桌面运行时 | 为 Treasure 宿主提供跨平台窗口、文件系统、系统对话框和 Rust 侧能力。 |
 
-![Treasure 生态架构图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v3.0.0/docs/diagrams/ecosystem.svg)
+![Treasure 生态架构图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v1.0.0/docs/diagrams/ecosystem.svg)
 
 ## 产品原型与功能逻辑
 
 从用户视角，Treasure 提供一个可安装、可切换的工具工作台：用户在宿主中打开插件，插件以独立页面呈现业务界面；需要数据或系统能力时，SDK 将请求交由宿主执行并返回结构化结果。
 
-![插件生命周期时序图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v3.0.0/docs/diagrams/plugin-lifecycle.svg)
+![插件生命周期时序图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v1.0.0/docs/diagrams/plugin-lifecycle.svg)
 
 ### 插件生命周期
 
@@ -66,7 +75,7 @@ Treasure 是一个以插件扩展为核心的桌面应用平台。`treasure-sdk`
 
 SDK 由“公开 API、宿主桥接、开发工具”构成。
 
-![Treasure SDK 技术架构图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v3.0.0/docs/diagrams/sdk-architecture.svg)
+![Treasure SDK 技术架构图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v1.0.0/docs/diagrams/sdk-architecture.svg)
 
 ### 受控宿主桥接
 
@@ -85,7 +94,7 @@ SDK 由“公开 API、宿主桥接、开发工具”构成。
 | 菜单协作 | `menus` | 注册、注销宿主菜单；重复 `register` 覆盖同一菜单；`updateChecked` 轻量同步勾选；通过类型化订阅接收原生窗口菜单点击事件。 |
 | 日志与通知 | `logs`、`notifications` | 结构化日志与系统通知。 |
 
-所有响应使用 `Result<T>`：`ok: true` 包含 value，`ok: false` 包含结构化错误码。SDK 2.0 不保留旧 API 兼容层；SDK 2.3.0 起桥接消息类型按能力域拆分，需要宿主 2.4.0+（详见[桥接协议](docs/BRIDGE-PROTOCOL.md)）。
+所有响应使用 `Result<T>`：`ok: true` 包含 value，`ok: false` 包含结构化错误码。SDK `1.0.0` 是重新建立的发布基线，不承诺与旧 npmjs 版本兼容；它需要 Treasure `1.0.0+`（详见[桥接协议](docs/BRIDGE-PROTOCOL.md)）。
 
 ## SDK 使用与插件研发入口
 
@@ -97,7 +106,7 @@ SDK 由“公开 API、宿主桥接、开发工具”构成。
 | 创建、调试和发布业务插件 | [插件研发指南](https://github.com/Luzenrocy/treasure-plugins/blob/main/docs/PLUGIN-DEVELOPMENT-GUIDE.md) | CLI 创建、manifest、注册调试插件、打包导入与发布。 |
 | 修改 SDK 的公开接口、桥接实现、CLI 或模板 | [SDK 开发与扩展指南](docs/SDK-DEVELOPMENT-GUIDE.md) | 源码分层、能力扩展链路、CLI/模板变更、构建与兼容性检查。 |
 
-CLI 使用 `npx treasure-sdk create <plugin-code>` 按需下载并执行，不要求全局安装。生成的插件项目会在 `package.json` 中声明 `treasure-sdk`，且 CLI 默认执行 `npm install`；安装细节和失败处理见插件研发指南。
+CLI 可通过 GitHub Packages 按需执行。生成的插件项目会在 `package.json` 中声明 `@luzenrocy/treasure-sdk`，并创建所需的 npm registry 配置；CLI 默认执行 `npm install`。安装细节和失败处理见插件研发指南。
 
 ## 插件使用 SDK 的运行模型
 
@@ -107,7 +116,7 @@ CLI 使用 `npx treasure-sdk create <plugin-code>` 按需下载并执行，不�
 
 数据访问的核心原则是：**插件发起意图，宿主决定是否执行**。SDK 不是权限最终裁决者，所有关键 SQL 规则都由宿主实施。
 
-![数据安全模型图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v3.0.0/docs/diagrams/data-security.svg)
+![数据安全模型图](https://raw.githubusercontent.com/Luzenrocy/treasure-sdk/v1.0.0/docs/diagrams/data-security.svg)
 
 - 插件查询、写入和事务必须显式声明使用到的 `tables`。
 - 宿主将裸表名重写为 `plugin_{pluginCode}_{table}`，实现插件间表空间隔离。

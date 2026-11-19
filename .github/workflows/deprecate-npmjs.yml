@@ -1,0 +1,34 @@
+name: Deprecate npmjs SDK history
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type DISCONTINUE_NPMJS to deprecate every published treasure-sdk version
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deprecate:
+    if: ${{ inputs.confirmation == 'DISCONTINUE_NPMJS' }}
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Deprecate published SDK versions
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          MESSAGE: 'Treasure SDK is now distributed via GitHub and Gitee Releases. This npmjs version is discontinued; do not use it.'
+        run: |
+          set -euo pipefail
+          : "${NODE_AUTH_TOKEN:?Set the NPM_TOKEN secret in the npm Environment before running this workflow.}"
+          for version in 1.0.2 1.0.6 1.0.7 1.0.8 2.0.0 2.1.0 2.1.1 2.2.0 2.3.0 2.3.1 3.0.0; do
+            npm deprecate "treasure-sdk@${version}" "$MESSAGE"
+          done
