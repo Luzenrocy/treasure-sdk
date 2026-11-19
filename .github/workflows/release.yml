@@ -70,21 +70,23 @@ jobs:
           NODE_AUTH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for tarball in release-assets/*.tgz; do
-            npm publish "./${tarball}" --access public --registry=https://npm.pkg.github.com
-          done
+          package_name=$(node -p "require('./package.json').name")
+          package_version=$(node -p "require('./package.json').version")
+          if npm view "${package_name}@${package_version}" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "${package_name}@${package_version} is already published; continuing recovery."
+          else
+            for tarball in release-assets/*.tgz; do
+              npm publish "./${tarball}" --access public --registry=https://npm.pkg.github.com
+            done
+          fi
 
-      # GitHub Packages creates personal-account packages as private by default.
-      # A classic PAT is required for the package-settings API used to make the
-      # first published version publicly visible.
-      - name: Make GitHub Package public
-        env:
-          GH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+      - name: Record manual package visibility step
         run: |
-          : "${GH_TOKEN:?Set GH_PACKAGES_TOKEN (classic PAT with package admin permission).}"
-          gh api --method PATCH \
-            "/user/packages/npm/%40luzenrocy%2Ftreasure-sdk" \
-            -f visibility=public
+          {
+            echo '## Manual package visibility step'
+            echo
+            echo 'Set @luzenrocy/treasure-sdk to **Public** in its GitHub package settings before releasing dependent plugins.'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Mirror release assets to Gitee
         shell: bash
