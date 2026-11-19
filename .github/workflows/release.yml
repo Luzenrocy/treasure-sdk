@@ -57,14 +57,22 @@ jobs:
 
       - name: Create GitHub Release
         run: |
-          gh release create "$RELEASE_TAG" release-assets/* \
-            --title "Treasure SDK ${RELEASE_TAG}" \
-            --generate-notes
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" release-assets/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$RELEASE_TAG" release-assets/* \
+              --title "Treasure SDK ${RELEASE_TAG}" \
+              --generate-notes
+          fi
 
       - name: Publish public npm package to GitHub Packages
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
-        run: npm publish release-assets/*.tgz --access public --registry=https://npm.pkg.github.com
+        run: |
+          set -euo pipefail
+          for tarball in release-assets/*.tgz; do
+            npm publish "./${tarball}" --access public --registry=https://npm.pkg.github.com
+          done
 
       # GitHub Packages creates personal-account packages as private by default.
       # A classic PAT is required for the package-settings API used to make the
