@@ -30,10 +30,25 @@ function syncHtmlPluginCode(htmlPath: string, code: string) {
   }
 }
 
+function freezePluginIdentity(root: string, manifestPath: string, htmlPath: string) {
+  if (!existsSync(manifestPath)) return;
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+  if (!manifest._frozen) {
+    const baseName = String(manifest.name || basename(root)).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'plugin';
+    manifest.name = `${baseName}-${generateRandomSuffix(6)}`;
+    manifest._frozen = true;
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    console.log(`❄️  plugin_code 已冻结: ${manifest.name}`);
+  }
+  syncHtmlPluginCode(htmlPath, manifest.name);
+}
+
 function treasureDevEndpoints(): any {
   const root = resolve(__dirname);
   const manifestPath = resolve(root, 'manifest.json');
   const htmlPath = resolve(root, 'index.html');
+  // Runs while Vite loads its config, for both `vite` and `vite build`.
+  freezePluginIdentity(root, manifestPath, htmlPath);
   return {
     name: 'treasure-dev-endpoints',
     configureServer(server: any) {
